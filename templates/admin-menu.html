@@ -1,0 +1,24 @@
+<div id="menu">
+  <div class="pure-menu">
+    <a class="pure-menu-heading" href="/admin/">Admin</a>
+    <a href="#menu" class="menu-button">
+      <i class="fa fa-bars"></i>
+    </a>
+    <div class="menu-container">
+      <ul class="pure-menu-list">
+        {{ range $k, $v := .Menu }}
+        <li class="pure-menu-item">
+          <a href="{{ $v.Location }}" class="pure-menu-link"><i class="fa {{ $v.Icon }}"></i> {{ $v.Label }}</a>
+        </li>
+        {{ end }}
+      </ul>
+      <ul class="pure-menu-list menu-bottom">
+        {{ range $k, $v := .BottomMenu }}
+        <li class="pure-menu-item">
+          <a href="{{ $v.Location }}" class="pure-menu-link"><i class="fa {{ $v.Icon }}"></i> {{ $v.Label }}</a>
+        </li>
+        {{ end }}
+      </ul>
+    </div>
+  </div>
+</div>
