@@ -30,6 +30,8 @@ type siteData struct {
 	ServerDir   string `json:"dir"`
 	DevMode     bool   `json:"devmode"`
 	DB          string `json:"db"`
+
+	CurrentJam string
 }
 
 // pageData is stuff that changes per request
@@ -47,6 +49,7 @@ type pageData struct {
 	Menu           []menuItem
 	BottomMenu     []menuItem
 	session        *pageSession
+	CurrentJam     string
 
 	TemplateData interface{}
 }
@@ -124,7 +127,7 @@ func saveConfig() {
 
 func initialize() {
 	// Check if the database has been created
-	assertError(openDatabase())
+	assertError(initDatabase())
 
 	if !dbHasUser() {
 		reader := bufio.NewReader(os.Stdin)
@@ -146,10 +149,80 @@ func initialize() {
 		}
 		assertError(dbUpdateUserPassword(email, string(pw1)))
 	}
+	if !dbHasCurrentJam() {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Create New Game Jam")
+		fmt.Print("GameJam Name: ")
+		gjName, _ := reader.ReadString('\n')
+		gjName = strings.TrimSpace(gjName)
+		if dbSetCurrentJam(gjName) != nil {
+			fmt.Println("Error saving Current Jam")
+		}
+	}
 }
 
 func loggingHandler(h http.Handler) http.Handler {
 	return handlers.LoggingHandler(os.Stdout, h)
+}
+
+func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
+	if site.DevMode {
+		w.Header().Set("Cache-Control", "no-cache")
+	}
+	p := new(pageData)
+	// Get session
+	var err error
+	var s *sessions.Session
+	if s, err = sessionStore.Get(req, site.SessionName); err != nil {
+		http.Error(w, err.Error(), 500)
+		return p
+	}
+	p.session = new(pageSession)
+	p.session.session = s
+	p.session.req = req
+	p.session.w = w
+
+	// First check if we're logged in
+	userEmail, _ := p.session.getStringValue("email")
+	// With a valid account
+	p.LoggedIn = dbIsValidUserEmail(userEmail)
+
+	p.Site = site
+	p.SubTitle = "GameJam Voting"
+	p.Stylesheets = make([]string, 0, 0)
+	p.Stylesheets = append(p.Stylesheets, "/assets/css/pure-min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/css/grids-responsive-min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/font-awesome/css/font-awesome.min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/css/gjvote.css")
+
+	p.HeaderScripts = make([]string, 0, 0)
+	p.HeaderScripts = append(p.HeaderScripts, "/assets/js/snack-min.js")
+
+	p.Scripts = make([]string, 0, 0)
+	p.Scripts = append(p.Scripts, "/assets/js/gjvote.js")
+
+	p.FlashMessage, p.FlashClass = p.session.getFlashMessage()
+	if p.FlashClass == "" {
+		p.FlashClass = "hidden"
+	}
+
+	// Build the menu
+	if p.LoggedIn {
+		p.Menu = append(p.Menu, menuItem{"Admin", "/admin", "fa-key"})
+		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
+		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "fa-users"})
+		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "fa-gamepad"})
+
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "fa-user"})
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "fa-sign-out"})
+	}
+
+	if p.CurrentJam, err = dbGetCurrentJam(); err != nil {
+		p.FlashMessage = "Error Loading Current GameJam: " + err.Error()
+		p.FlashClass = "error"
+	}
+
+	return p
 }
 
 func (p *pageData) show(tmplName string, w http.ResponseWriter) error {

@@ -4,57 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 func initAdminRequest(w http.ResponseWriter, req *http.Request) *pageData {
-	if site.DevMode {
-		w.Header().Set("Cache-Control", "no-cache")
-	}
-	p := new(pageData)
-	// Get session
-	var err error
-	var s *sessions.Session
-	if s, err = sessionStore.Get(req, site.SessionName); err != nil {
-		http.Error(w, err.Error(), 500)
-		return p
-	}
-	p.session = new(pageSession)
-	p.session.session = s
-	p.session.req = req
-	p.session.w = w
-
-	// First check if we're logged in
-	userEmail, _ := p.session.getStringValue("email")
-
-	// With a valid account
-	p.LoggedIn = dbIsValidUserEmail(userEmail)
-	p.Site = site
-	p.SubTitle = ""
-	p.Stylesheets = make([]string, 0, 0)
-	p.Stylesheets = append(p.Stylesheets, "/assets/css/pure-min.css")
-	p.Stylesheets = append(p.Stylesheets, "/assets/css/grids-responsive-min.css")
-	p.Stylesheets = append(p.Stylesheets, "/assets/font-awesome/css/font-awesome.min.css")
-	p.Stylesheets = append(p.Stylesheets, "/assets/css/gjvote.css")
+	p := InitPageData(w, req)
 	p.Stylesheets = append(p.Stylesheets, "/assets/css/admin.css")
-
-	p.HeaderScripts = make([]string, 0, 0)
-	p.HeaderScripts = append(p.HeaderScripts, "/assets/js/snack-min.js")
-	p.Scripts = make([]string, 0, 0)
 	p.Scripts = append(p.Scripts, "/assets/js/admin.js")
-	p.FlashMessage, p.FlashClass = p.session.getFlashMessage()
-	if p.FlashClass == "" {
-		p.FlashClass = "hidden"
-	}
-	// Build the menu
-	if p.LoggedIn {
-		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
-		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "fa-users"})
-		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "fa-gamepad"})
 
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "fa-user"})
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "fa-sign-out"})
-	}
 	return p
 }
 
@@ -183,6 +139,59 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 
 // handleAdminTeams
 func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) {
+	vars := mux.Vars(req)
+	page.SubTitle = "Teams"
+	teamId := vars["id"]
+	if teamId == "new" {
+		switch vars["function"] {
+		case "save":
+			name := req.FormValue("teamname")
+			if dbIsValidTeam(name) {
+				// A team with that name already exists
+				page.session.setFlashMessage("A team with the name "+name+" already exists!", "error")
+			} else {
+				if err := dbCreateNewTeam(name); err != nil {
+					page.session.setFlashMessage(err.Error(), "error")
+				} else {
+					page.session.setFlashMessage("Team "+name+" created!", "success")
+				}
+			}
+			redirect("/admin/teams", w, req)
+		default:
+			page.SubTitle = "Add New Team"
+			page.show("admin-addteam.html", w)
+		}
+	} else if teamId != "" {
+		if dbIsValidTeam(teamId) {
+			switch vars["function"] {
+			case "save":
+				page.session.setFlashMessage("Not implemented yet...", "success")
+				redirect("/admin/teams", w, req)
+			case "delete":
+				var err error
+				if err = dbDeleteTeam(teamId); err != nil {
+					page.session.setFlashMessage("Error deleting team: "+err.Error(), "error")
+				}
+				redirect("/admin/teams", w, req)
+			default:
+				page.SubTitle = "Edit Team"
+				t := dbGetTeam(teamId)
+				page.TemplateData = t
+				page.show("admin-editteam.html", w)
+			}
+		} else {
+			page.session.setFlashMessage("Couldn't find the requested team, please try again.", "error")
+			redirect("/admin/teams", w, req)
+		}
+	} else {
+		type teamsPageData struct {
+			Teams []Team
+		}
+
+		page.TemplateData = teamsPageData{Teams: dbGetAllTeams()}
+		page.SubTitle = "Teams"
+		page.show("admin-teams.html", w)
+	}
 }
 
 // handleAdminGames

@@ -1,11 +1,6 @@
 package main
 
-import (
-	"fmt"
-
-	"github.com/br0xen/boltease"
-	"golang.org/x/crypto/bcrypt"
-)
+import "github.com/br0xen/boltease"
 
 var db *boltease.DB
 var dbOpened bool
@@ -24,83 +19,73 @@ func openDatabase() error {
 
 func initDatabase() error {
 	openDatabase()
-	db.MkBucketPath([]string{"users"})
-	db.MkBucketPath([]string{"teams"})
-	return nil
+	// Create the path to the bucket to store admin users
+	if err := db.MkBucketPath([]string{"users"}); err != nil {
+		return err
+	}
+	// Create the path to the bucket to store jam informations
+	if err := db.MkBucketPath([]string{"jams"}); err != nil {
+		return err
+	}
+	// Create the path to the bucket to store site config data
+	return db.MkBucketPath([]string{"site"})
 }
 
-// dbHasUser
-// Returns true if there are any users in the database
-func dbHasUser() bool {
-	return len(dbGetAllUsers()) > 0
-}
-
-func dbGetAllUsers() []string {
+func dbSetCurrentJam(name string) error {
 	if err := db.OpenDB(); err != nil {
-		return []string{}
+		return err
 	}
 	defer db.CloseDB()
 
-	usrs, err := db.GetBucketList([]string{"users"})
-	if err != nil {
-		return []string{}
-	}
-	return usrs
+	return db.SetValue([]string{"site"}, "current-jam", name)
 }
 
-func dbIsValidUserEmail(email string) bool {
-	if err := db.OpenDB(); err != nil {
+func dbHasCurrentJam() bool {
+	var nm string
+	var err error
+	if nm, err = dbGetCurrentJam(); err != nil {
 		return false
 	}
-	defer db.CloseDB()
-
-	usrPath := []string{"users", email}
-	if _, err := db.GetValue(usrPath, "password"); err != nil {
-		return false
-	}
-	return true
+	ret, err := dbIsValidJam(nm)
+	return ret && err != nil
 }
 
-func dbCheckCredentials(email, pw string) error {
-	var err error
-	if err = db.OpenDB(); err != nil {
-		return err
-	}
-	defer db.CloseDB()
-
-	var uPw string
-	usrPath := []string{"users", email}
-	if uPw, err = db.GetValue(usrPath, "password"); err != nil {
-		return err
-	}
-	return bcrypt.CompareHashAndPassword([]byte(uPw), []byte(pw))
-}
-
-// dbUpdateUserPassword
-// Takes an email address and a password
-// Creates the user if it doesn't exist, encrypts the password
-// and updates it in the db
-func dbUpdateUserPassword(email, password string) error {
-	cryptPw, cryptError := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if cryptError != nil {
-		return cryptError
-	}
+func dbGetCurrentJam() (string, error) {
 	if err := db.OpenDB(); err != nil {
-		return err
+		return "", err
 	}
 	defer db.CloseDB()
 
-	usrPath := []string{"users", email}
-	return db.SetValue(usrPath, "password", string(cryptPw))
+	return db.GetValue([]string{"site"}, "current-jam")
 }
 
-func dbDeleteUser(email string) error {
+func dbIsValidJam(name string) (bool, error) {
 	var err error
-	fmt.Println("Deleting User:", email)
 	if err = db.OpenDB(); err != nil {
-		return err
+		return false, err
 	}
 	defer db.CloseDB()
 
-	return db.DeleteBucket([]string{"users"}, email)
+	// Get all keys in the jams bucket
+	var keys []string
+	if keys, err = db.GetKeyList([]string{"jams", name}); err != nil {
+		return false, err
+	}
+	// All valid gamejams will have:
+	//	"name"
+	//	"teams"
+	for _, v := range []string{"name", "teams"} {
+		found := false
+		for j := range keys {
+			if keys[j] == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// If we make it here, we didn't find a key we need
+			return false, nil
+		}
+	}
+	return true, nil
 }

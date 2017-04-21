@@ -1,0 +1,42 @@
+<div class="center">
+  <form class="pure-form pure-form-aligned" action="/admin/teams/{{ .TemplateData.UUID }}/save" method="POST">
+    <fieldset>
+      <div class="pure-control-group">
+        <span>{{ .TemplateData.Name }}</span>
+      </div>
+
+      <div class="pure-control-group">
+        <label class="control-label" for="teamname">Team Name</label>
+        <input id="teamname" name="teamname" type="password" placeholder="Team Name">
+      </div>
+
+      <div class="pure-control-group reset-pull">
+        <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
+        <button type="submit" class="pull-right space pure-button pure-button-primary">Update</button>
+        <button type="button" id="btnDeleteUser" class="pull-right space pure-button pure-button-error">Delete</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+<script>
+  snack.listener(
+    {node:document.getElementById('btnDeleteTeam'),event:'click'},
+    function() {
+      showModal({
+        title: 'Delete Team',
+        subtitle: '({{ .TemplateData.Name }} - {{ .TemplateData.UUID }})',
+        body: 'Are you sure? This cannot be undone.',
+        buttons: [{
+          title:'Cancel',
+          position:'left',
+          click: hideModal
+        },{
+          title:'Delete',
+          position:'right',
+          class: 'pure-button-error',
+          href: '/admin/teams/{{ .TemplateData.UUID }}/delete'
+        }]
+      });
+    }
+  );
+</script>
