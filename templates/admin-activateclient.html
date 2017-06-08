@@ -1,5 +1,5 @@
 <div class="center">
-  <form class="pure-form pure-form-aligned" action="/admin/dologin" method="POST">
+  <form class="pure-form pure-form-aligned" action="/admin/clients/{{ .TemplateData.Id }}/auth" method="POST">
     <fieldset>
       <div class="pure-control-group">
         <label for="email">Email Address</label>
@@ -13,7 +13,7 @@
 
       <div class="pure-controls">
         <label for="remember" class="pure-checkbox">
-          <input id="remember" name="remember" type="checkbox"> Remember Me
+          <input id="remember" name="remember" type="checkbox"> Stay Logged In
         </label>
       </div>
       <button type="submit" class="pure-button pure-button-primary">Submit</button>

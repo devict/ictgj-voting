@@ -1,6 +1,11 @@
 package main
 
-import "github.com/br0xen/boltease"
+import (
+	"errors"
+	"strings"
+
+	"github.com/br0xen/boltease"
+)
 
 var db *boltease.DB
 var dbOpened bool
@@ -24,7 +29,7 @@ func initDatabase() error {
 		return err
 	}
 	// Create the path to the bucket to store jam informations
-	if err := db.MkBucketPath([]string{"jams"}); err != nil {
+	if err := db.MkBucketPath([]string{"jam"}); err != nil {
 		return err
 	}
 	// Create the path to the bucket to store site config data
@@ -41,51 +46,25 @@ func dbSetCurrentJam(name string) error {
 }
 
 func dbHasCurrentJam() bool {
-	var nm string
 	var err error
-	if nm, err = dbGetCurrentJam(); err != nil {
+	if _, err = dbGetCurrentJam(); err != nil {
 		return false
 	}
-	ret, err := dbIsValidJam(nm)
-	return ret && err != nil
+	return true
 }
 
 func dbGetCurrentJam() (string, error) {
-	if err := db.OpenDB(); err != nil {
+	var ret string
+	var err error
+	if err = db.OpenDB(); err != nil {
 		return "", err
 	}
 	defer db.CloseDB()
 
-	return db.GetValue([]string{"site"}, "current-jam")
-}
+	ret, err = db.GetValue([]string{"site"}, "current-jam")
 
-func dbIsValidJam(name string) (bool, error) {
-	var err error
-	if err = db.OpenDB(); err != nil {
-		return false, err
+	if err == nil && strings.TrimSpace(ret) == "" {
+		return ret, errors.New("No Jam Name Specified")
 	}
-	defer db.CloseDB()
-
-	// Get all keys in the jams bucket
-	var keys []string
-	if keys, err = db.GetKeyList([]string{"jams", name}); err != nil {
-		return false, err
-	}
-	// All valid gamejams will have:
-	//	"name"
-	//	"teams"
-	for _, v := range []string{"name", "teams"} {
-		found := false
-		for j := range keys {
-			if keys[j] == v {
-				found = true
-				break
-			}
-		}
-		if !found {
-			// If we make it here, we didn't find a key we need
-			return false, nil
-		}
-	}
-	return true, nil
+	return ret, err
 }

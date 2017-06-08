@@ -1,4 +1,4 @@
-<div id="menu">
+<div id="menu" class="{{if .HideAdminMenu}}hidden{{end}}">
   <div class="pure-menu">
     <a class="pure-menu-heading" href="/admin/">Admin</a>
     <a href="#menu" class="menu-button">
@@ -12,6 +12,11 @@
         </li>
         {{ end }}
       </ul>
+      {{if .ClientIsAuth}}
+      <a href="/admin/clients/{{.ClientID}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
+      {{else}}
+      <a href="/admin/clients/{{.ClientID}}/add" class="pure-menu-link"><i class="fa fa-key"></i> Auth Client</a>
+      {{end}}
       <ul class="pure-menu-list menu-bottom">
         {{ range $k, $v := .BottomMenu }}
         <li class="pure-menu-item">

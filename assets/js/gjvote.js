@@ -1,5 +1,5 @@
-function showAdminPanel() {
-  
+function toggleAdminPanel() {
+  document.querySelector('#menu').classList.toggle('hidden');
 }
 
 
@@ -12,6 +12,6 @@ document.onkeydown = function(evt) {
     isEscape = (evt.keyCode == 27);
   }
   if(isEscape) {
-    showAdminPanel();
+    toggleAdminPanel();
   }
 }

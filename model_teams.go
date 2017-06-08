@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/pborman/uuid"
 )
 
@@ -28,57 +26,41 @@ func dbCreateNewTeam(nm string) error {
 	}
 	defer db.CloseDB()
 
-	var currJam string
-	if currJam, err = dbGetCurrentJam(); err != nil {
-		return err
-	}
-
 	// Generate a UUID
 	uuid := uuid.New()
-	teamPath := []string{"jams", currJam, "teams", uuid}
+	teamPath := []string{"teams", uuid}
 
 	if err := db.MkBucketPath(teamPath); err != nil {
-		fmt.Println("Error at 39: " + uuid)
 		return err
 	}
 	if err := db.SetValue(teamPath, "name", nm); err != nil {
-		fmt.Println("Error at 43")
 		return err
 	}
 	if err := db.MkBucketPath(append(teamPath, "members")); err != nil {
-		fmt.Println("Error at 47")
 		return err
 	}
 	gamePath := append(teamPath, "game")
 	if err := db.MkBucketPath(gamePath); err != nil {
-		fmt.Println("Error at 52")
 		return err
 	}
 	if err := db.SetValue(append(gamePath), "name", ""); err != nil {
-		fmt.Println("Error at 56")
 		return err
 	}
 	return db.MkBucketPath(append(gamePath, "screenshots"))
 }
 
-func dbIsValidTeam(nm string) bool {
+func dbIsValidTeam(id string) bool {
 	var err error
-	var currJam string
 	if err = db.OpenDB(); err != nil {
 		return false
 	}
 	defer db.CloseDB()
 
-	if currJam, err = dbGetCurrentJam(); err != nil {
-		return false
-	}
-	teamPath := []string{"jams", currJam, "teams"}
+	teamPath := []string{"teams"}
 	if teamUids, err := db.GetBucketList(teamPath); err == nil {
 		for _, v := range teamUids {
-			if tstName, err := db.GetValue(append(teamPath, v), "name"); err == nil {
-				if tstName == nm {
-					return true
-				}
+			if v == id {
+				return true
 			}
 		}
 	}
@@ -88,21 +70,19 @@ func dbIsValidTeam(nm string) bool {
 func dbGetAllTeams() []Team {
 	var ret []Team
 	var err error
-	var currJam string
 	if err = db.OpenDB(); err != nil {
 		return ret
 	}
 	defer db.CloseDB()
 
-	if currJam, err = dbGetCurrentJam(); err != nil {
+	teamPath := []string{"teams"}
+	var teamUids []string
+	if teamUids, err = db.GetBucketList(teamPath); err != nil {
 		return ret
 	}
-	teamPath := []string{"jams", currJam, "teams"}
-	if teamUids, err := db.GetBucketList(teamPath); err != nil {
-		for _, v := range teamUids {
-			if tm := dbGetTeam(v); tm != nil {
-				ret = append(ret, *tm)
-			}
+	for _, v := range teamUids {
+		if tm := dbGetTeam(v); tm != nil {
+			ret = append(ret, *tm)
 		}
 	}
 	return ret
@@ -110,17 +90,14 @@ func dbGetAllTeams() []Team {
 
 func dbGetTeam(id string) *Team {
 	var err error
-	var currJam string
 	if err = db.OpenDB(); err != nil {
 		return nil
 	}
 	defer db.CloseDB()
 
-	if currJam, err = dbGetCurrentJam(); err != nil {
-		return nil
-	}
-	teamPath := []string{"jams", currJam, "teams", id}
+	teamPath := []string{"teams", id}
 	tm := new(Team)
+	tm.UUID = id
 	if tm.Name, err = db.GetValue(teamPath, "name"); err != nil {
 		return nil
 	}
@@ -129,16 +106,12 @@ func dbGetTeam(id string) *Team {
 
 func dbGetTeamByName(nm string) *Team {
 	var err error
-	var currJam string
 	if err = db.OpenDB(); err != nil {
 		return nil
 	}
 	defer db.CloseDB()
 
-	if currJam, err = dbGetCurrentJam(); err != nil {
-		return nil
-	}
-	teamPath := []string{"jams", currJam, "teams"}
+	teamPath := []string{"teams"}
 	var teamUids []string
 	if teamUids, err = db.GetBucketList(teamPath); err != nil {
 		for _, v := range teamUids {
@@ -151,17 +124,24 @@ func dbGetTeamByName(nm string) *Team {
 	return nil
 }
 
+func dbUpdateTeam(id string, tm *Team) error {
+	var err error
+	if err = db.OpenDB(); err != nil {
+		return nil
+	}
+	defer db.CloseDB()
+
+	teamPath := []string{"teams", id}
+	return db.SetValue(teamPath, "name", tm.Name)
+}
+
 func dbDeleteTeam(id string) error {
 	var err error
-	var currJam string
 	if err = db.OpenDB(); err != nil {
 		return err
 	}
 	defer db.CloseDB()
 
-	if currJam, err = dbGetCurrentJam(); err != nil {
-		return err
-	}
-	teamPath := []string{"jams", currJam, "teams"}
+	teamPath := []string{"teams"}
 	return db.DeleteBucket(teamPath, id)
 }

@@ -1,60 +1,37 @@
 package main
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
-func initAdminRequest(w http.ResponseWriter, req *http.Request) *pageData {
-	p := InitPageData(w, req)
-	p.Stylesheets = append(p.Stylesheets, "/assets/css/admin.css")
-	p.Scripts = append(p.Scripts, "/assets/js/admin.js")
-
-	return p
-}
-
-// handleAdmin
-// Main admin handler, routes the request based on the category
-func handleAdmin(w http.ResponseWriter, req *http.Request) {
-	page := initAdminRequest(w, req)
-	if !page.LoggedIn {
-		page.SubTitle = "Admin Login"
-		page.show("admin-login.html", w)
-	} else {
-		vars := mux.Vars(req)
-		adminCategory := vars["category"]
-		switch adminCategory {
-		case "users":
-			handleAdminUsers(w, req, page)
-		case "teams":
-			handleAdminTeams(w, req, page)
-		case "games":
-			handleAdminGames(w, req, page)
-		default:
-			page.show("admin-main.html", w)
-		}
-	}
-}
-
 // handleAdminDoLogin
 // Verify the provided credentials, set up a cookie (if requested)
 // and redirect back to /admin
+// TODO: Set up the cookie
 func handleAdminDoLogin(w http.ResponseWriter, req *http.Request) {
 	page := initAdminRequest(w, req)
 	// Fetch the login credentials
 	email := req.FormValue("email")
 	password := req.FormValue("password")
-	if email != "" && password != "" {
-		if err := dbCheckCredentials(email, password); err != nil {
-			page.session.setFlashMessage("Invalid Login", "error")
-		} else {
-			page.session.setStringValue("email", email)
-		}
-	} else {
+	if err := doLogin(email, password); err != nil {
 		page.session.setFlashMessage("Invalid Login", "error")
+	} else {
+		page.session.setStringValue("email", email)
 	}
 	redirect("/admin", w, req)
+}
+
+// doLogin attempts to log in with the given email/password
+// If it can't, it returns an error
+func doLogin(email, password string) error {
+	if strings.TrimSpace(email) != "" && strings.TrimSpace(password) != "" {
+		return dbCheckCredentials(email, password)
+	}
+	return errors.New("Invalid Credentials")
 }
 
 // handleAdminDoLogout
@@ -135,65 +112,4 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 		page.SubTitle = "Admin Users"
 		page.show("admin-users.html", w)
 	}
-}
-
-// handleAdminTeams
-func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) {
-	vars := mux.Vars(req)
-	page.SubTitle = "Teams"
-	teamId := vars["id"]
-	if teamId == "new" {
-		switch vars["function"] {
-		case "save":
-			name := req.FormValue("teamname")
-			if dbIsValidTeam(name) {
-				// A team with that name already exists
-				page.session.setFlashMessage("A team with the name "+name+" already exists!", "error")
-			} else {
-				if err := dbCreateNewTeam(name); err != nil {
-					page.session.setFlashMessage(err.Error(), "error")
-				} else {
-					page.session.setFlashMessage("Team "+name+" created!", "success")
-				}
-			}
-			redirect("/admin/teams", w, req)
-		default:
-			page.SubTitle = "Add New Team"
-			page.show("admin-addteam.html", w)
-		}
-	} else if teamId != "" {
-		if dbIsValidTeam(teamId) {
-			switch vars["function"] {
-			case "save":
-				page.session.setFlashMessage("Not implemented yet...", "success")
-				redirect("/admin/teams", w, req)
-			case "delete":
-				var err error
-				if err = dbDeleteTeam(teamId); err != nil {
-					page.session.setFlashMessage("Error deleting team: "+err.Error(), "error")
-				}
-				redirect("/admin/teams", w, req)
-			default:
-				page.SubTitle = "Edit Team"
-				t := dbGetTeam(teamId)
-				page.TemplateData = t
-				page.show("admin-editteam.html", w)
-			}
-		} else {
-			page.session.setFlashMessage("Couldn't find the requested team, please try again.", "error")
-			redirect("/admin/teams", w, req)
-		}
-	} else {
-		type teamsPageData struct {
-			Teams []Team
-		}
-
-		page.TemplateData = teamsPageData{Teams: dbGetAllTeams()}
-		page.SubTitle = "Teams"
-		page.show("admin-teams.html", w)
-	}
-}
-
-// handleAdminGames
-func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) {
 }

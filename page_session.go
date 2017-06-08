@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/sessions"
+	"github.com/pborman/uuid"
 )
 
 // This is basically a convenience struct for
@@ -28,6 +29,17 @@ func (p *pageSession) getStringValue(key string) (string, error) {
 func (p *pageSession) setStringValue(key, val string) {
 	p.session.Values[key] = val
 	p.session.Save(p.req, p.w)
+}
+
+func (p *pageSession) getClientID() string {
+	var clientId string
+	var err error
+	if clientId, err = p.getStringValue("client_id"); err != nil {
+		// No client id, generate and save one
+		clientId := uuid.New()
+		p.setStringValue("client_id", clientId)
+	}
+	return clientId
 }
 
 func (p *pageSession) setFlashMessage(msg, status string) {

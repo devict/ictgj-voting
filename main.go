@@ -48,8 +48,11 @@ type pageData struct {
 	LoggedIn       bool
 	Menu           []menuItem
 	BottomMenu     []menuItem
+	HideAdminMenu  bool
 	session        *pageSession
 	CurrentJam     string
+	ClientID       string
+	ClientIsAuth   bool
 
 	TemplateData interface{}
 }
@@ -159,6 +162,13 @@ func initialize() {
 			fmt.Println("Error saving Current Jam")
 		}
 	}
+
+	jmNm, err := dbGetCurrentJam()
+	if err == nil {
+		fmt.Println("Current Jam Name: " + jmNm)
+	} else {
+		fmt.Println(err.Error())
+	}
 }
 
 func loggingHandler(h http.Handler) http.Handler {
@@ -215,12 +225,18 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 
 		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "fa-user"})
 		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "fa-sign-out"})
+	} else {
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Admin", "/admin", "fa-sign-in"})
 	}
+	p.HideAdminMenu = true
 
 	if p.CurrentJam, err = dbGetCurrentJam(); err != nil {
 		p.FlashMessage = "Error Loading Current GameJam: " + err.Error()
 		p.FlashClass = "error"
 	}
+
+	p.ClientID = p.session.getClientID()
+	p.ClientIsAuth = dbClientIsAuth(p.ClientID)
 
 	return p
 }

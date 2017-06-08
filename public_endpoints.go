@@ -7,14 +7,18 @@ import (
 
 func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 	p := InitPageData(w, req)
+
 	return p
 }
 
 func handleMain(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
-	page.SubTitle = "!"
+	page.SubTitle = ""
+
 	for _, tmpl := range []string{
 		"htmlheader.html",
+		"admin-menu.html",
+		"header.html",
 		"main.html",
 		"footer.html",
 		"htmlfooter.html",
