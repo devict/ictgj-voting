@@ -1,0 +1,12 @@
+<div class="center">
+  <form class="pure-form pure-form-aligned" action="/admin/games/new/save" method="POST">
+    <fieldset>
+      <div class="pure-control-group">
+        <label for="teamid">Team Key</label>
+        <input class="uuid-field" id="teamid" name="teamid" type="text" value="{{ .TeamID }}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autofocus>
+      </div>
+
+      <button type="submit" class="pure-button pure-button-primary">Add Game</button>
+    </fieldset>
+  </form>
+</div>

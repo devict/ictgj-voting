@@ -1,0 +1,5 @@
+# Ignore the binary
+gjvote
+
+# Ignore the DB
+gjvote.db

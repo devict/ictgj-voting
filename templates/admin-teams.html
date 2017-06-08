@@ -1,0 +1,35 @@
+<div class="bottom-space center">
+  <a id="btnAddTeam" class="pure-button pure-button-success" href="/admin/teams/new"><i class="fa fa-plus"></i> Add Team</a>
+</div>
+<table id="teams-table" class="hidden sortable pure-table pure-table-bordered center">
+  <thead>
+      <tr>
+          <th>Name</th>
+          <th>Key</th>
+          <th>Members</th>
+          <th></th>
+      </tr>
+  </thead>
+  <tbody>
+      {{ range $i, $v := .TemplateData.Teams }} 
+      <tr>
+          <td>{{ $v.Name }}</td>
+          <td>{{ $v.UUID }}</td>
+          <td>{{ len $v.Members }}</td>
+          <td>
+            <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
+            <a href="/admin/teams/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
+          </td>
+      </tr>
+      {{ end }}
+  </tbody>
+</table>
+<script>
+snack.ready(function() {
+  var tableBody = document.querySelector("#teams-table>tbody");
+  if(tableBody.children.length>0) {
+    // Show the table
+    document.getElementById('teams-table').classList.remove('hidden');
+  }
+});
+</script>

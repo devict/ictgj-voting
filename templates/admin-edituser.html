@@ -1,0 +1,47 @@
+<div class="center">
+  <form class="pure-form pure-form-aligned" action="/admin/users/{{ .TemplateData }}/save" method="POST">
+    <fieldset>
+      <div class="pure-control-group">
+        <span>{{ .TemplateData }}</span>
+      </div>
+
+      <div class="pure-control-group">
+        <label class="control-label" for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Password">
+      </div>
+
+      <div class="pure-control-group">
+        <label class="control-label" for="password_rpt">Repeat Password</label>
+        <input id="password_rpt" name="password_rpt" type="password" placeholder="Repeat Password">
+      </div>
+
+      <div class="pure-control-group reset-pull">
+        <a href="/admin/users" class="pull-left space pure-button pure-button-plain">Cancel</a>
+        <button type="submit" class="pull-right space pure-button pure-button-primary">Update</button>
+        <button type="button" id="btnDeleteUser" class="pull-right space pure-button pure-button-error">Delete</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+<script>
+  snack.listener(
+    {node:document.getElementById('btnDeleteUser'),event:'click'},
+    function() {
+      showModal({
+        title: 'Delete User',
+        subtitle: '({{ .TemplateData }})',
+        body: 'Are you sure? This cannot be undone.',
+        buttons: [{
+          title:'Cancel',
+          position:'left',
+          click: hideModal
+        },{
+          title:'Delete',
+          position:'right',
+          class: 'pure-button-error',
+          href: '/admin/users/{{ .TemplateData.ID }}/delete'
+        }]
+      });
+    }
+  );
+</script>

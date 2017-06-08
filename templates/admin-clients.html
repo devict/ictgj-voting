@@ -1,0 +1,28 @@
+<table id="clients-table" class="hidden sortable pure-table pure-table-bordered center">
+  <thead>
+      <tr>
+          <th>Client ID</th>
+          <th>Last Known IP</th>
+      </tr>
+  </thead>
+  <tbody>
+      {{ range $i, $v := .TemplateData.Clients }} 
+      <tr>
+          <td>{{ $v.Id }}</td>
+          <td>{{ $v.Ip }}</td>
+          <td>
+            <a href="/admin/clients/{{ $v.UUID }}/deauth" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
+          </td>
+      </tr>
+      {{ end }}
+  </tbody>
+</table>
+<script>
+snack.ready(function() {
+  var tableBody = document.querySelector("#clients-table>tbody");
+  if(tableBody.children.length>0) {
+    // Show the table
+    document.getElementById('clients-table').classList.remove('hidden');
+  }
+});
+</script>
