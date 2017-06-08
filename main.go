@@ -53,6 +53,7 @@ type pageData struct {
 	CurrentJam     string
 	ClientID       string
 	ClientIsAuth   bool
+	TeamID         string
 
 	TemplateData interface{}
 }
@@ -237,6 +238,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 
 	p.ClientID = p.session.getClientID()
 	p.ClientIsAuth = dbClientIsAuth(p.ClientID)
+	p.TeamID, _ = p.session.getStringValue("teamid")
 
 	return p
 }

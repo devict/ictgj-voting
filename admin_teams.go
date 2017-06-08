@@ -14,7 +14,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		switch vars["function"] {
 		case "save":
 			name := req.FormValue("teamname")
-			if dbIsValidTeam(name) {
+			if dbGetTeamByName(name) != nil {
 				// A team with that name already exists
 				page.session.setFlashMessage("A team with the name "+name+" already exists!", "error")
 			} else {
@@ -48,6 +48,8 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 					page.session.setFlashMessage("Error deleting team: "+err.Error(), "error")
 				}
 				redirect("/admin/teams", w, req)
+			case "savemember":
+				redirect("/admin/teams/"+teamId, w, req)
 			default:
 				page.SubTitle = "Edit Team"
 				t := dbGetTeam(teamId)

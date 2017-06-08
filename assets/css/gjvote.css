@@ -57,6 +57,10 @@ div.content {
   background-color: #191818;
 }
 
+input.uuid-field {
+  width: 360px;
+}
+
 @media (min-width: 40em) {
   #menu {
     width: 150px;
