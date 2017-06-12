@@ -1,3 +1,4 @@
+{{ $uuid := .TemplateData.UUID }}
 <div class="center">
   <form class="pure-form pure-form-aligned" action="/admin/teams/{{ .TemplateData.UUID }}/save" method="POST">
     <fieldset>
@@ -19,8 +20,6 @@
   </form>
 
   <h2>Members</h2>
-  <form class="pure-form pure-form-aligned" action="/admin/teams/{{ .TemplateData.UUID }}/savemember" method="POST">
-    <fieldset>
       <table>
         <thead>
           <tr>
@@ -28,37 +27,44 @@
             <th>Slack ID</th>
             <th>Twitter</th>
             <th>Email</th>
-            <th></th>
+            <th>Edit</th>
+            <th>Remove</th>
           </tr>
         </thead>
         <tbody>
           {{ range $i, $v := .TemplateData.Members }}
           <tr>
             <td>{{ $v.Name }}</td>
-            <td>{{ $v.SlackID }}</td>
+            <td>{{ $v.SlackId }}</td>
             <td>{{ $v.Twitter }}</td>
             <td>{{ $v.Email }}</td>
             <td>
               <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
-              <a href="/admin/teams/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
+            </td>
+            <td>
+              <form action="/admin/teams/{{ $uuid }}/deletemember" method="POST">
+                <input type="hidden" name="memberid" value="{{ $v.UUID }}"/>
+                <button type="submit" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></button>
+              </form>
             </td>
           </tr>
           {{ end }}
           <tr>
-            <td colspan="5" class="center">Add a new member</td>
+            <td colspan="6" class="center">Add a new member</td>
           </tr>
           <tr>
-            <td><input id="newmembername" name="newmembername" value="" placeholder="Member Name" /></td>
-            <td><input id="newmemberslackid" name="newmemberslackid" value="" placeholder="@SlackID" /></td>
-            <td><input id="newmembertwitter" name="newmembertwitter" value="" placeholder="@Twitter" /></td>
-            <td><input id="newmemberemail" name="newmemberemail" value="" placeholder="user@email.com" /></td>
-            <td><button type="submit" class="pull-right space pure-button pure-button-primary">Add</button></td>
+            <td colspan="6">
+              <form action="/admin/teams/{{ $uuid }}/savemember" method="POST">
+                <input id="newmembername" name="newmembername" value="" placeholder="Member Name" />
+                <input id="newmemberslackid" name="newmemberslackid" value="" placeholder="@SlackID" />
+                <input id="newmembertwitter" name="newmembertwitter" value="" placeholder="@Twitter" />
+                <input id="newmemberemail" name="newmemberemail" value="" placeholder="user@email.com" />
+                <button type="submit" class="pull-right space pure-button pure-button-primary">Add</button>
+              </form>
+            </td>
           </tr>
         </tbody>
       </table>
-    </fieldset>
-  </form>
-
 </div>
 <script>
   snack.listener(
@@ -66,7 +72,7 @@
     function() {
       showModal({
         title: 'Delete Team',
-        subtitle: '({{ .TemplateData.Name }} - {{ .TemplateData.UUID }})',
+        subtitle: '({{ .TemplateData.Name }} - {{ $uuid}})',
         body: 'Are you sure? This cannot be undone.',
         buttons: [{
           title:'Cancel',
@@ -76,7 +82,7 @@
           title:'Delete',
           position:'right',
           class: 'pure-button-error',
-          href: '/admin/teams/{{ .TemplateData.UUID }}/delete'
+          href: '/admin/teams/{{ $uuid }}/delete'
         }]
       });
     }

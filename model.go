@@ -8,22 +8,35 @@ import (
 )
 
 var db *boltease.DB
-var dbOpened bool
+var dbOpened int
 
 func openDatabase() error {
-	if !dbOpened {
+	dbOpened += 1
+	if dbOpened == 1 {
 		var err error
 		db, err = boltease.Create(site.DB, 0600, nil)
 		if err != nil {
 			return err
 		}
-		dbOpened = true
+	}
+	return nil
+}
+
+func closeDatabase() error {
+	dbOpened -= 1
+	if dbOpened == 0 {
+		return db.CloseDB()
 	}
 	return nil
 }
 
 func initDatabase() error {
-	openDatabase()
+	var err error
+	if err = openDatabase(); err != nil {
+		return err
+	}
+	defer closeDatabase()
+
 	// Create the path to the bucket to store admin users
 	if err := db.MkBucketPath([]string{"users"}); err != nil {
 		return err
@@ -37,10 +50,11 @@ func initDatabase() error {
 }
 
 func dbSetCurrentJam(name string) error {
-	if err := db.OpenDB(); err != nil {
+	var err error
+	if err = openDatabase(); err != nil {
 		return err
 	}
-	defer db.CloseDB()
+	defer closeDatabase()
 
 	return db.SetValue([]string{"site"}, "current-jam", name)
 }
@@ -56,10 +70,10 @@ func dbHasCurrentJam() bool {
 func dbGetCurrentJam() (string, error) {
 	var ret string
 	var err error
-	if err = db.OpenDB(); err != nil {
+	if err = openDatabase(); err != nil {
 		return "", err
 	}
-	defer db.CloseDB()
+	defer closeDatabase()
 
 	ret, err = db.GetValue([]string{"site"}, "current-jam")
 
