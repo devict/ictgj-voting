@@ -49,6 +49,23 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				}
 				redirect("/admin/teams", w, req)
 			case "savemember":
+				mbrName := req.FormValue("newmembername")
+				mbrSlack := req.FormValue("newmemberslackid")
+				mbrTwitter := req.FormValue("newmembertwitter")
+				mbrEmail := req.FormValue("newmemberemail")
+				if err := dbAddTeamMember(teamId, mbrName, mbrEmail, mbrSlack, mbrTwitter); err != nil {
+					page.session.setFlashMessage("Error adding team member: "+err.Error(), "error")
+				} else {
+					page.session.setFlashMessage(mbrName+" added to team!", "success")
+				}
+				redirect("/admin/teams/"+teamId, w, req)
+			case "deletemember":
+				mbrId := req.FormValue("memberid")
+				if err := dbDeleteTeamMember(teamId, mbrId); err != nil {
+					page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
+				} else {
+					page.session.setFlashMessage("Member deleted from team", "success")
+				}
 				redirect("/admin/teams/"+teamId, w, req)
 			default:
 				page.SubTitle = "Edit Team"
