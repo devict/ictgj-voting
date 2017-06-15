@@ -202,13 +202,13 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	p.Site = site
 	p.SubTitle = "GameJam Voting"
 	p.Stylesheets = make([]string, 0, 0)
-	p.Stylesheets = append(p.Stylesheets, "/assets/css/pure-min.css")
-	p.Stylesheets = append(p.Stylesheets, "/assets/css/grids-responsive-min.css")
-	p.Stylesheets = append(p.Stylesheets, "/assets/font-awesome/css/font-awesome.min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/css/pure-min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/css/grids-responsive-min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/font-awesome/css/font-awesome.min.css")
 	p.Stylesheets = append(p.Stylesheets, "/assets/css/gjvote.css")
 
 	p.HeaderScripts = make([]string, 0, 0)
-	p.HeaderScripts = append(p.HeaderScripts, "/assets/js/snack-min.js")
+	p.HeaderScripts = append(p.HeaderScripts, "/assets/vendor/js/snack-min.js")
 
 	p.Scripts = make([]string, 0, 0)
 	p.Scripts = append(p.Scripts, "/assets/js/gjvote.js")
