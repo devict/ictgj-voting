@@ -55,3 +55,31 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 		}
 	}
 }
+
+func clientIsAuthenticated(cid string, req *http.Request) bool {
+	return clientIsServer(req) || dbClientIsAuth(cid)
+}
+
+func clientIsServer(req *http.Request) bool {
+	clientIp, _, _ := net.SplitHostPort(req.RemoteAddr)
+	ifaces, err := net.Interfaces()
+	if err == nil {
+		for _, i := range ifaces {
+			if addrs, err := i.Addrs(); err == nil {
+				for _, addr := range addrs {
+					var ip net.IP
+					switch v := addr.(type) {
+					case *net.IPNet:
+						ip = v.IP
+					case *net.IPAddr:
+						ip = v.IP
+					}
+					if clientIp == ip.String() {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}

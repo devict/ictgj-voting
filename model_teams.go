@@ -105,6 +105,7 @@ func dbGetTeam(id string) *Team {
 		return nil
 	}
 	tm.Members, _ = dbGetTeamMembers(id)
+	tm.Game = dbGetTeamGame(id)
 	return tm
 }
 
@@ -213,7 +214,6 @@ func dbGetTeamMembers(teamid string) ([]TeamMember, error) {
 		for _, v := range memberUuids {
 			var mbr *TeamMember
 			if mbr, err = dbGetTeamMember(teamid, v); err == nil {
-				fmt.Println("Finding Team Members", teamid, mbr.Name)
 				ret = append(ret, *mbr)
 			}
 		}

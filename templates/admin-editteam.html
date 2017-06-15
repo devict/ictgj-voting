@@ -1,70 +1,126 @@
 {{ $uuid := .TemplateData.UUID }}
 <div class="center">
-  <form class="pure-form pure-form-aligned" action="/admin/teams/{{ .TemplateData.UUID }}/save" method="POST">
+  <div class="left">
+    <form class="pure-form pure-form-aligned" action="/admin/teams/{{ $uuid }}/save" method="POST">
+      <h3>Team Details</h3>
+      <fieldset>
+        <div class="left big-space">
+          <div class="pure-control-group">
+            <label class="control-label" for="teamname">Team Name</label>
+            <input id="teamname" name="teamname" value="{{ .TemplateData.Name }}" placeholder="Team Name">
+          </div>
+        </div>
+        <div class="pure-control-group reset-pull">
+          <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
+          <button type="submit" class="pull-right space pure-button pure-button-primary">Update Team</button>
+          <button type="button" id="btnDeleteTeam" class="pull-right space pure-button pure-button-error">Delete Team</button>
+        </div>
+      </fieldset>
+    </form>
+    <hr />
+  </div>
+
+  <form class="pure-form pure-form-aligned" action="/admin/games/{{ $uuid }}/save" method="POST">
     <fieldset>
-      <div class="pure-control-group">
-        <span>{{ .TemplateData.Name }}</span>
+      <div class="left big-space">
+        <h3>Team Game</h3>
+        <div class="pure-control-group">
+          <label class="control-label" for="gamename">Game Name</label>
+          <input id="gamename" name="gamename" value="{{ .TemplateData.Game.Name }}" placeholder="Game Name">
+        </div>
+        <div class="pure-control-group">
+          <label class="control-label" for="gamedesc">Description</label>
+          <textarea id="gamedesc" name="gamedesc" placeholder="Description...">{{ .TemplateData.Game.Description }}</textarea>
+        </div>
+        <div class="pure-control-group">
+          <label class="control-label">Screenshots</label>
+          <div class="center-all horizontal-scroll thumbnail-container">
+          {{ if not .TemplateData.Game.Screenshots }}
+            <a style="margin-top:40px;" class="center-all pure-button pure-button-primary" href="javascript:toggleUploadSSForm();">Upload Screenshot</a>
+          {{ else }}
+            {{ range $i, $v := .TemplateData.Game.Screenshots }}
+            <img class="thumbnail" alt="{{ $v.Description }}" src="{{ $v.Image }}" />
+            {{ end }}
+          {{ end }}
+          </div>
+          {{ if .TemplateData.Game.Screenshots }}
+          <div class="right">
+            <a id="toggleUploadSSFormBtn" class="pure-button pure-button-primary" href="javascript:toggleUploadSSForm();">Upload Screenshot</a>
+          </div>
+          {{ end }}
+        </div>
       </div>
-
-      <div class="pure-control-group">
-        <label class="control-label" for="teamname">Team Name</label>
-        <input id="teamname" name="teamname" value="{{ .TemplateData.Name }}" placeholder="Team Name">
-      </div>
-
       <div class="pure-control-group reset-pull">
-        <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
-        <button type="submit" class="pull-right space pure-button pure-button-primary">Update</button>
-        <button type="button" id="btnDeleteUser" class="pull-right space pure-button pure-button-error">Delete</button>
+        <a href="/admin/teams/{{ $uuid }}" class="pull-left space pure-button pure-button-plain">Cancel</a>
+        <button type="submit" class="pull-right space pure-button pure-button-primary">Update Game</button>
       </div>
     </fieldset>
   </form>
 
-  <h2>Members</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Slack ID</th>
-            <th>Twitter</th>
-            <th>Email</th>
-            <th>Edit</th>
-            <th>Remove</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{ range $i, $v := .TemplateData.Members }}
-          <tr>
-            <td>{{ $v.Name }}</td>
-            <td>{{ $v.SlackId }}</td>
-            <td>{{ $v.Twitter }}</td>
-            <td>{{ $v.Email }}</td>
-            <td>
-              <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
-            </td>
-            <td>
-              <form action="/admin/teams/{{ $uuid }}/deletemember" method="POST">
-                <input type="hidden" name="memberid" value="{{ $v.UUID }}"/>
-                <button type="submit" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></button>
-              </form>
-            </td>
-          </tr>
-          {{ end }}
-          <tr>
-            <td colspan="6" class="center">Add a new member</td>
-          </tr>
-          <tr>
-            <td colspan="6">
-              <form action="/admin/teams/{{ $uuid }}/savemember" method="POST">
-                <input id="newmembername" name="newmembername" value="" placeholder="Member Name" />
+  <hr />
+  <div class="left">
+    <h3>Team Members</h3>
+    <table class="center padding hide">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Slack ID</th>
+          <th>Twitter</th>
+          <th>Email</th>
+          <th>Edit</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range $i, $v := .TemplateData.Members }}
+        <tr>
+          <td>{{ $v.Name }}</td>
+          <td>{{ $v.SlackId }}</td>
+          <td>{{ $v.Twitter }}</td>
+          <td>{{ $v.Email }}</td>
+          <td>
+            <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
+          </td>
+          <td>
+            <form action="/admin/teams/{{ $uuid }}/deletemember" method="POST">
+              <input type="hidden" name="memberid" value="{{ $v.UUID }}"/>
+              <button type="submit" class="pure-button pure-button-error"><i class="fa fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {{ end }}
+        <tr>
+          <td colspan="6">Add a new member</td>
+        </tr>
+        <tr>
+          <td colspan="6" class="padding">
+            <form class="pure-form" action="/admin/teams/{{ $uuid }}/savemember" method="POST">
+              <div class="pure-control-group">
+                <input id="newmembername" name="newmembername" value="" placeholder="Member Name" autofocus />
                 <input id="newmemberslackid" name="newmemberslackid" value="" placeholder="@SlackID" />
                 <input id="newmembertwitter" name="newmembertwitter" value="" placeholder="@Twitter" />
                 <input id="newmemberemail" name="newmemberemail" value="" placeholder="user@email.com" />
-                <button type="submit" class="pull-right space pure-button pure-button-primary">Add</button>
-              </form>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <button type="submit" class="pull-right space-sides pure-button pure-button-primary">Add</button>
+              </div>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pure-control-group reset-pull">
+    <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
+  </div>
+</div>
+<div id="uploadscreenshotform" style="display:none;">
+  <h3>Upload Screenshot</h3>
+  <form class="pure-form pure-form-aligned" action="/admin/games/{{ $uuid }}/screenshotupload" method="POST" enctype="multipart/form-data">
+    <div class="pure-control-group" style="margin-bottom:50px;">
+      <input class="file" type="file" name="newssfile" multiple>
+    </div>
+    <a href="javascript:hideModal();" class="pull-left space-sides pure-button">Cancel</a>
+    <button type="submit" class="pull-right space-sides pure-button pure-button-primary">Add</button>
+  </form>
 </div>
 <script>
   snack.listener(
@@ -72,7 +128,7 @@
     function() {
       showModal({
         title: 'Delete Team',
-        subtitle: '({{ .TemplateData.Name }} - {{ $uuid}})',
+        subtitle: '({{ .TemplateData.Name }})',
         body: 'Are you sure? This cannot be undone.',
         buttons: [{
           title:'Cancel',
@@ -87,4 +143,14 @@
       });
     }
   );
+  function toggleUploadSSForm() {
+    var uploadForm = document.getElementById('uploadscreenshotform');
+    showModal({
+      title: 'Upload Screenshot',
+      subtitle: '({{ .TemplateData.Name }})',
+      bodyNode: uploadForm
+    });
+    uploadForm.style.display="block";
+    document.getElementById('modal-body').style.height='165px';
+  }
 </script>

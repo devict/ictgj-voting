@@ -12,11 +12,15 @@
         </li>
         {{ end }}
       </ul>
-      {{if .ClientIsAuth}}
-      <a href="/admin/clients/{{.ClientID}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
-      {{else}}
+      {{ if .ClientIsAuth }}
+        {{ if .ClientIsServer }}
+        <span class="pure-menu-nonlink"><i class="fa fa-server"></i> Server Mode</span>
+        {{ else }}
+        <a href="/admin/clients/{{.ClientID}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
+        {{ end }}
+      {{ else }}
       <a href="/admin/clients/{{.ClientID}}/add" class="pure-menu-link"><i class="fa fa-key"></i> Auth Client</a>
-      {{end}}
+      {{ end }}
       <ul class="pure-menu-list menu-bottom">
         {{ range $k, $v := .BottomMenu }}
         <li class="pure-menu-item">
