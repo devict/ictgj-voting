@@ -1,13 +1,19 @@
 <table id="games-table" class="hidden sortable pure-table pure-table-bordered center">
   <thead>
       <tr>
+          <th>Team</th>
           <th>Game Name</th>
+          <th></th>
       </tr>
   </thead>
   <tbody>
       {{ range $i, $v := .TemplateData.Games }} 
       <tr>
-          <td>{{ $v.Name }}</td>
+          <td>{{ $v.Team.Name }}</td>
+          <td>{{ $v.Game.Name }}</td>
+          <td>
+            <a href="/admin/teams/{{ $v.Team.UUID }}/edit#game" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
+          </td>
       </tr>
       {{ end }}
   </tbody>

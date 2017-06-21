@@ -15,10 +15,22 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 	teamId := vars["id"]
 	if teamId == "" {
 		// Games List
-		type gamesPageData struct {
-			Games []Game
+		type gamePage struct {
+			Game *Game
+			Team *Team
 		}
-		page.TemplateData = gamesPageData{Games: dbGetAllGames()}
+		type gamesPageData struct {
+			Games []gamePage
+		}
+		gpd := new(gamesPageData)
+		allGames := dbGetAllGames()
+		for _, gm := range allGames {
+			gamePage := new(gamePage)
+			gamePage.Game = &gm
+			gamePage.Team = dbGetTeam(gm.TeamId)
+			gpd.Games = append(gpd.Games, *gamePage)
+		}
+		page.TemplateData = gpd
 		page.SubTitle = "Games"
 		page.show("admin-games.html", w)
 	} else {
@@ -37,6 +49,12 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 		case "screenshotupload":
 			if err := saveScreenshots(teamId, req); err != nil {
 				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+			}
+			redirect("/admin/teams/"+teamId, w, req)
+		case "screenshotdelete":
+			ssid := vars["subid"]
+			if err := dbDeleteTeamGameScreenshot(teamId, ssid); err != nil {
+				page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
 			}
 			redirect("/admin/teams/"+teamId, w, req)
 		}

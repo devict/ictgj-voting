@@ -99,6 +99,7 @@ func main() {
 	admin.HandleFunc("/{category}", handleAdmin)
 	admin.HandleFunc("/{category}/{id}", handleAdmin)
 	admin.HandleFunc("/{category}/{id}/{function}", handleAdmin)
+	admin.HandleFunc("/{category}/{id}/{function}/{subid}", handleAdmin)
 
 	http.Handle("/", r)
 

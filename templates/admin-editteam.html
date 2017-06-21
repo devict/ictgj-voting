@@ -23,6 +23,7 @@
   <form class="pure-form pure-form-aligned" action="/admin/games/{{ $uuid }}/save" method="POST">
     <fieldset>
       <div class="left big-space">
+        <a name="game" />
         <h3>Team Game</h3>
         <div class="pure-control-group">
           <label class="control-label" for="gamename">Game Name</label>
@@ -34,12 +35,12 @@
         </div>
         <div class="pure-control-group">
           <label class="control-label">Screenshots</label>
-          <div class="center-all horizontal-scroll thumbnail-container">
+          <div class="center-all horizontal-scroll thumbnail-container" id="thumbnail-container">
           {{ if not .TemplateData.Game.Screenshots }}
             <a style="margin-top:40px;" class="center-all pure-button pure-button-primary" href="javascript:toggleUploadSSForm();">Upload Screenshot</a>
           {{ else }}
             {{ range $i, $v := .TemplateData.Game.Screenshots }}
-            <img class="thumbnail" alt="{{ $v.Description }}" src="{{ $v.Image }}" />
+            <img data-teamid="{{ $uuid }}" data-ssid="{{ $v.UUID }}" class="thumbnail" alt="{{ $v.Description }}" src="data:image/png;base64,{{ $v.Image }}" />
             {{ end }}
           {{ end }}
           </div>
@@ -122,6 +123,10 @@
     <button type="submit" class="pull-right space-sides pure-button pure-button-primary">Add</button>
   </form>
 </div>
+<div id="editscreenshotform" style="display:none;">
+  <div id="editss-container" class="pure-control-group" style="margin-bottom:50px;">
+  </div>
+</div>
 <script>
   snack.listener(
     {node:document.getElementById('btnDeleteTeam'),event:'click'},
@@ -143,6 +148,43 @@
       });
     }
   );
+  snack.listener(
+    {
+      node:document.getElementById('thumbnail-container'),
+      event:'click',
+      delegate: function(node) {
+        return node.getElementsByTagName('img');
+      }
+    },
+    function() {
+      showEditScreenShotModal(snack.wrap(this)[0]);
+    }
+  );
+
+  function showEditScreenShotModal(img) {
+    var newImg = img.cloneNode();
+    var editSSForm = document.getElementById('editscreenshotform');
+    var cont = document.getElementById('editss-container');
+    while(cont.hasChildNodes()) {
+      cont.removeChild(cont.lastChild);
+    }
+    cont.appendChild(newImg);
+    showModal({
+      title: 'Edit Screenshot',
+      bodyNode: editSSForm,
+      buttons: [
+        { title: 'Delete', class: 'pure-button-error', position: 'right',
+          click: function() {
+            window.location = "/admin/games/{{ $uuid }}/screenshotdelete/"+img.dataset.ssid;
+          }
+        },
+        { title: 'Cancel', class: 'pure-button', position: 'right', click: hideModal }
+      ]
+    });
+    editSSForm.style.display="block";
+    editSSForm.style.height="200px";
+  }
+
   function toggleUploadSSForm() {
     var uploadForm = document.getElementById('uploadscreenshotform');
     showModal({

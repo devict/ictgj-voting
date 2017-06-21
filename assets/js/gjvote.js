@@ -51,6 +51,7 @@ function showModal(options) {
     }
   }
   modal.style.visibility = 'visible';
+  window.scrollTo(0, 0);
 }
 
 function hideModal() {
