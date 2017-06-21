@@ -1,0 +1,23 @@
+<table id="games-table" class="hidden sortable pure-table pure-table-bordered center">
+  <thead>
+      <tr>
+          <th>Game Name</th>
+      </tr>
+  </thead>
+  <tbody>
+      {{ range $i, $v := .TemplateData.Games }} 
+      <tr>
+          <td>{{ $v.Name }}</td>
+      </tr>
+      {{ end }}
+  </tbody>
+</table>
+<script>
+snack.ready(function() {
+  var tableBody = document.querySelector("#games-table>tbody");
+  if(tableBody.children.length>0) {
+    // Show the table
+    document.getElementById('games-table').classList.remove('hidden');
+  }
+});
+</script>

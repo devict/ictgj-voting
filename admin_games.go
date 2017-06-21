@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"mime/multipart"
+	"io/ioutil"
 	"net/http"
-	"os"
-	"strconv"
+
+	"encoding/base64"
 
 	"github.com/gorilla/mux"
 )
@@ -46,31 +44,11 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 }
 
 func saveScreenshots(teamId string, req *http.Request) error {
-	err := req.ParseMultipartForm((1 << 10) * 24)
+	file, _, err := req.FormFile("newssfile")
 	if err != nil {
 		return err
 	}
-
-	for _, fheaders := range req.MultipartForm.File {
-		for _, hdr := range fheaders {
-			// open uploaded
-			var infile multipart.File
-			if infile, err = hdr.Open(); err != nil {
-				return err
-			}
-
-			// open destination
-			var outfile *os.File
-			if outfile, err = os.Create("./uploaded/" + hdr.Filename); err != nil {
-				return err
-			}
-			// 32K buffer copy
-			var written int64
-			if written, err = io.Copy(outfile, infile); err != nil {
-				return err
-			}
-			fmt.Println("uploaded file:" + hdr.Filename + ";length:" + strconv.Itoa(int(written)))
-		}
-	}
-	return nil
+	data, err := ioutil.ReadAll(file)
+	str := base64.StdEncoding.EncodeToString(data)
+	return dbSaveTeamGameScreenshot(teamId, &Screenshot{Image: str})
 }
