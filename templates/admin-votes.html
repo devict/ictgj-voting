@@ -1,0 +1,14 @@
+<table id="votes-table" class="sortable pure-table pure-table-bordered center">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range $i, $v, := .TemplateData.Votes }}
+    <tr>
+      <td>{{ $v.Timestamp }}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>

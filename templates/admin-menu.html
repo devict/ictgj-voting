@@ -1,6 +1,5 @@
 <div id="menu" class="{{if .HideAdminMenu}}hidden{{end}}">
   <div class="pure-menu">
-    <a class="pure-menu-heading" href="/admin/">Admin</a>
     <a href="#menu" class="menu-button">
       <i class="fa fa-bars"></i>
     </a>
@@ -13,9 +12,7 @@
         {{ end }}
       </ul>
       {{ if .ClientIsAuth }}
-        {{ if .ClientIsServer }}
-        <span class="pure-menu-nonlink"><i class="fa fa-server"></i> Server Mode</span>
-        {{ else }}
+        {{ if not .ClientIsServer }}
         <a href="/admin/clients/{{.ClientID}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
         {{ end }}
       {{ else }}

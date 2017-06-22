@@ -1,23 +1,22 @@
-<table id="games-table" class="hidden sortable pure-table pure-table-bordered center">
+{{ if not .TemplateData.Games }}
+<div>No games have been created</div>
+{{ else }}
+<table id="games-table" class="sortable pure-table pure-table-bordered center">
   <thead>
-      <tr>
-          <th>Game Name</th>
-      </tr>
+    <tr>
+      <th>Game Name</th>
+      <th>Team Name</th>
+      <th>Screenshots</th>
+    </tr>
   </thead>
   <tbody>
-      {{ range $i, $v := .TemplateData.Games }} 
-      <tr>
-          <td>{{ $v.Name }}</td>
-      </tr>
-      {{ end }}
+    {{ range $i, $v := .TemplateData.Games }} 
+    <tr>
+      <td>{{ $v.Name }}</td>
+      <td></td>
+      <td>{{ len $v.Screenshots }}</td>
+    </tr>
+    {{ end }}
   </tbody>
 </table>
-<script>
-snack.ready(function() {
-  var tableBody = document.querySelector("#games-table>tbody");
-  if(tableBody.children.length>0) {
-    // Show the table
-    document.getElementById('games-table').classList.remove('hidden');
-  }
-});
-</script>
+{{ end }}

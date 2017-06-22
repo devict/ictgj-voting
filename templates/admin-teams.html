@@ -1,12 +1,16 @@
 <div class="bottom-space center">
   <a id="btnAddTeam" class="pure-button pure-button-success" href="/admin/teams/new"><i class="fa fa-plus"></i> Add Team</a>
 </div>
-<table id="teams-table" class="hidden sortable pure-table pure-table-bordered center">
+{{ if not .TemplateData.Teams }}
+<div>No teams have been created</div>
+{{ else }}
+<table id="teams-table" class="sortable pure-table pure-table-bordered center">
   <thead>
       <tr>
           <th>Name</th>
           <th>Key</th>
           <th>Members</th>
+          <th>Game</th>
           <th></th>
       </tr>
   </thead>
@@ -16,6 +20,7 @@
           <td>{{ $v.Name }}</td>
           <td>{{ $v.UUID }}</td>
           <td>{{ len $v.Members }}</td>
+          <td>{{ $v.Game.Name }}</td>
           <td>
             <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
             <a href="/admin/teams/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
@@ -24,12 +29,4 @@
       {{ end }}
   </tbody>
 </table>
-<script>
-snack.ready(function() {
-  var tableBody = document.querySelector("#teams-table>tbody");
-  if(tableBody.children.length>0) {
-    // Show the table
-    document.getElementById('teams-table').classList.remove('hidden');
-  }
-});
-</script>
+{{ end }}

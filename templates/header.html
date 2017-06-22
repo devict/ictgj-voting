@@ -8,6 +8,8 @@ var clientID = "{{.ClientID}}";
   <div class="header">
     devICT Game Jam - {{.CurrentJam}}
   </div>
+  {{ if .SubTitle }}
   <div class="header-menu">
     <h2>{{.SubTitle}}</h2>
   </div>
+  {{ end }}

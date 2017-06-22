@@ -131,7 +131,23 @@ table.padding td {
 
 .pure-button-error {
   background-color: #DD0000;
-  color: #FFFFFF;
+  color: #FFF;
+}
+
+.pure-button-toggle-first {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+.pure-button-toggle-middle {
+  border-radius: 0px;
+  margin-left: -5px;
+  border-left: 1px solid #CCC;
+}
+.pure-button-toggle-last {
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  margin-left: -5px;
+  border-left: 1px solid #CCC;
 }
 
 #modal-overlay {
@@ -185,6 +201,11 @@ table.padding td {
 
   aside.flash {
     margin-left: 150px;
+  }
+
+  aside.flash.error {
+    background-color: #DD0000;
+    color: #FFFFFF;
   }
 
   aside.flash.success {

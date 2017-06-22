@@ -1,3 +1,7 @@
+<div>The hosting server is always an authenticated client</div>
+{{ if not .TemplateData.Clients }}
+<div>No additional clients have been authenticated</div>
+{{ else }}
 <table id="clients-table" class="hidden sortable pure-table pure-table-bordered center">
   <thead>
       <tr>
@@ -17,12 +21,4 @@
       {{ end }}
   </tbody>
 </table>
-<script>
-snack.ready(function() {
-  var tableBody = document.querySelector("#clients-table>tbody");
-  if(tableBody.children.length>0) {
-    // Show the table
-    document.getElementById('clients-table').classList.remove('hidden');
-  }
-});
-</script>
+{{ end }}

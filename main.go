@@ -1,11 +1,11 @@
 package main
 
+//go:generate esc -o assets.go assets
+
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -21,15 +21,15 @@ import (
 )
 
 const AppName = "gjvote"
+const DbName = AppName + ".db"
 
 // SiteData is stuff that stays the same
 type siteData struct {
-	Title       string `json:"title"`
-	Port        int    `json:"port"`
-	SessionName string `json:"session"`
-	ServerDir   string `json:"dir"`
-	DevMode     bool   `json:"devmode"`
-	DB          string `json:"db"`
+	Title       string
+	Port        int
+	SessionName string
+	ServerDir   string
+	DevMode     bool
 
 	CurrentJam string
 }
@@ -56,6 +56,7 @@ type pageData struct {
 	ClientIsServer bool
 	TeamID         string
 
+	PublicMode   int
 	TemplateData interface{}
 }
 
@@ -70,19 +71,22 @@ var sessionSecret = "JCOP5e8ohkTcOzcSMe74"
 var sessionStore = sessions.NewCookieStore([]byte(sessionSecret))
 var site *siteData
 var r *mux.Router
-var configFile string
 
 func main() {
-	configFile = "./config.json"
 	loadConfig()
-	saveConfig()
+	dbSaveSiteConfig(site)
 	initialize()
 
 	r = mux.NewRouter()
 	r.StrictSlash(true)
 
-	s := http.StripPrefix("/assets/", http.FileServer(http.Dir(site.ServerDir+"assets/")))
-	r.PathPrefix("/assets/").Handler(s)
+	if site.DevMode {
+		fmt.Println("Operating in Development Mode")
+	}
+	//s := http.StripPrefix("/assets/", http.FileServer(FS(site.DevMode)))
+	//http.Dir(site.ServerDir+"assets/")))
+	//r.PathPrefix("/assets/").Handler(s)
+	r.PathPrefix("/assets/").Handler(http.FileServer(FS(site.DevMode)))
 
 	// Public Subrouter
 	pub := r.PathPrefix("/").Subrouter()
@@ -109,25 +113,47 @@ func main() {
 }
 
 func loadConfig() {
-	site = new(siteData)
-	// Defaults:
-	site.Title = "ICT GameJam"
-	site.Port = 8080
-	site.SessionName = "ict-gamejam"
-	site.ServerDir = "./"
-	site.DevMode = false
-	site.DB = AppName + ".db"
+	site = dbGetSiteConfig()
 
-	jsonInp, err := ioutil.ReadFile(configFile)
-	if err == nil {
-		assertError(json.Unmarshal(jsonInp, &site))
+	if len(os.Args) > 1 {
+		for _, v := range os.Args {
+			key := v
+			val := ""
+			eqInd := strings.Index(v, "=")
+			if eqInd > 0 {
+				// It's a key/val argument
+				key = v[:eqInd]
+				val = v[eqInd+1:]
+			}
+			switch key {
+			case "-title":
+				site.Title = val
+				fmt.Print("Set site title: ", site.Title, "\n")
+			case "-port":
+				var tryPort int
+				var err error
+				if tryPort, err = strconv.Atoi(val); err != nil {
+					fmt.Print("Invalid port given: ", val, " (Must be an integer)\n")
+					tryPort = site.Port
+				}
+				// TODO: Make sure a valid port number is given
+				site.Port = tryPort
+			case "-session-name":
+				site.SessionName = val
+			case "-server-dir":
+				// TODO: Probably check if the given directory is valid
+				site.ServerDir = val
+			case "-help", "-h", "-?":
+				printHelp()
+				done()
+			case "-dev":
+				site.DevMode = true
+			case "-reset-defaults":
+				resetToDefaults()
+				done()
+			}
+		}
 	}
-}
-
-func saveConfig() {
-	var jsonInp []byte
-	jsonInp, _ = json.Marshal(site)
-	assertError(ioutil.WriteFile(configFile, jsonInp, 0644))
 }
 
 func initialize() {
@@ -221,9 +247,10 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	// Build the menu
 	if p.LoggedIn {
 		p.Menu = append(p.Menu, menuItem{"Admin", "/admin", "fa-key"})
-		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
 		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "fa-users"})
 		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "fa-gamepad"})
+		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
+		p.Menu = append(p.Menu, menuItem{"Clients", "/admin/clients", "fa-desktop"})
 
 		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "fa-user"})
 		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "fa-sign-out"})
@@ -240,7 +267,11 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	p.ClientID = p.session.getClientID()
 	p.ClientIsAuth = clientIsAuthenticated(p.ClientID, req)
 	p.ClientIsServer = clientIsServer(req)
+	// TeamID is for team self-administration
 	p.TeamID, _ = p.session.getStringValue("teamid")
+
+	// Public Mode
+	p.PublicMode = dbGetPublicSiteMode()
 
 	return p
 }
@@ -265,6 +296,7 @@ func (p *pageData) show(tmplName string, w http.ResponseWriter) error {
 // outputTemplate
 // Spit out a template
 func outputTemplate(tmplName string, tmplData interface{}, w http.ResponseWriter) error {
+	// TODO: Use embedded files for these... Hopefully?
 	_, err := os.Stat("templates/" + tmplName)
 	if err == nil {
 		t := template.New(tmplName)
@@ -279,10 +311,53 @@ func redirect(url string, w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, url, 303)
 }
 
-func printOutput(out string) {
-	if site.DevMode {
-		fmt.Print(out)
+func resetToDefaults() {
+	def := GetDefaultSiteConfig()
+	fmt.Println("Reset settings to defaults?")
+	fmt.Print(site.Title, " -> ", def.Title, "\n")
+	fmt.Print(site.Port, " -> ", def.Port, "\n")
+	fmt.Print(site.SessionName, " -> ", def.SessionName, "\n")
+	fmt.Print(site.ServerDir, " -> ", def.ServerDir, "\n")
+	fmt.Println("Are you sure? (y/N): ")
+	reader := bufio.NewReader(os.Stdin)
+	conf, _ := reader.ReadString('\n')
+	conf = strings.ToUpper(strings.TrimSpace(conf))
+	if strings.HasPrefix(conf, "Y") {
+		if dbSaveSiteConfig(def) != nil {
+			errorExit("Error resetting to defaults")
+		}
+		fmt.Println("Reset to defaults")
 	}
+}
+
+func printHelp() {
+	help := []string{
+		"Game Jam Voting Help",
+		"  -help, -h, -?            Print this message",
+		"  -dev                     Development mode, load assets from file system",
+		"  -port=<port num>         Set the site port",
+		"  -session-name=<session>  Set the name of the session to be used",
+		"  -server-dir=<directory>  Set the server directory",
+		"                           This designates where the database will be saved",
+		"                           and where the app will look for files if you're",
+		"                           operating in 'development' mode (-dev)",
+		"  -title=<title>           Set the site title",
+		"  -current-jam=<name>      Change the name of the current jam",
+		"  -reset-defaults          Reset all configuration options to defaults",
+		"",
+	}
+	for _, v := range help {
+		fmt.Println(v)
+	}
+}
+
+func done() {
+	os.Exit(0)
+}
+
+func errorExit(msg string) {
+	fmt.Println(msg)
+	os.Exit(1)
 }
 
 func assertError(err error) {

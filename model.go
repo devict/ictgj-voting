@@ -10,11 +10,26 @@ import (
 var db *boltease.DB
 var dbOpened int
 
+const (
+	SiteModeWaiting = iota
+	SiteModeVoting
+	SiteModeError
+)
+
+func GetDefaultSiteConfig() *siteData {
+	ret := new(siteData)
+	ret.Title = "ICT GameJam"
+	ret.Port = 8080
+	ret.SessionName = "ict-gamejam"
+	ret.ServerDir = "./"
+	return ret
+}
+
 func openDatabase() error {
 	dbOpened += 1
 	if dbOpened == 1 {
 		var err error
-		db, err = boltease.Create(site.DB, 0600, nil)
+		db, err = boltease.Create(DbName, 0600, nil)
 		if err != nil {
 			return err
 		}
@@ -81,4 +96,65 @@ func dbGetCurrentJam() (string, error) {
 		return ret, errors.New("No Jam Name Specified")
 	}
 	return ret, err
+}
+
+func dbGetSiteConfig() *siteData {
+	var ret *siteData
+	def := GetDefaultSiteConfig()
+	var err error
+	if err = openDatabase(); err != nil {
+		return def
+	}
+	defer closeDatabase()
+
+	ret = new(siteData)
+	siteConf := []string{"site"}
+	if ret.Title, err = db.GetValue(siteConf, "title"); err != nil {
+		ret.Title = def.Title
+	}
+	if ret.Port, err = db.GetInt(siteConf, "port"); err != nil {
+		ret.Port = def.Port
+	}
+	if ret.SessionName, err = db.GetValue(siteConf, "session-name"); err != nil {
+		ret.SessionName = def.SessionName
+	}
+	if ret.ServerDir, err = db.GetValue(siteConf, "server-dir"); err != nil {
+		ret.ServerDir = def.ServerDir
+	}
+	return ret
+}
+
+func dbSaveSiteConfig(dat *siteData) error {
+	var err error
+	if err = openDatabase(); err != nil {
+		return err
+	}
+	defer closeDatabase()
+
+	siteConf := []string{"site"}
+	if err = db.SetValue(siteConf, "title", dat.Title); err != nil {
+		return err
+	}
+	if err = db.SetInt(siteConf, "port", dat.Port); err != nil {
+		return err
+	}
+	if err = db.SetValue(siteConf, "session-name", dat.SessionName); err != nil {
+		return err
+	}
+	return db.SetValue(siteConf, "server-dir", dat.ServerDir)
+}
+
+func dbGetPublicSiteMode() int {
+	if ret, err := db.GetInt([]string{"site"}, "public-mode"); err != nil {
+		return SiteModeWaiting
+	} else {
+		return ret
+	}
+}
+
+func dbSetPublicSiteMode(mode int) error {
+	if mode < 0 || mode >= SiteModeError {
+		return errors.New("Invalid site mode")
+	}
+	return db.SetInt([]string{"site"}, "public-mode", mode)
 }
