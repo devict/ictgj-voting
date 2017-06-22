@@ -16,6 +16,7 @@ type Game struct {
 type Screenshot struct {
 	Description string
 	Image       string
+	UUID        string
 }
 
 func dbUpdateTeamGame(teamId, name, desc string) error {
@@ -101,6 +102,7 @@ func dbGetTeamGameScreenshot(teamId, ssId string) *Screenshot {
 	var err error
 	ssPath := []string{"teams", teamId, "game", "screenshots", ssId}
 	ret := new(Screenshot)
+	ret.UUID = ssId
 	if ret.Description, err = db.GetValue(ssPath, "description"); err != nil {
 		return nil
 	}

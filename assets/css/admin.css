@@ -5,3 +5,7 @@ div.content {
 div.bottom-space {
   margin-bottom: 15px;
 }
+
+img.thumbnail {
+  cursor: pointer;
+}
