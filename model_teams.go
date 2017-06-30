@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/pborman/uuid"
 )
@@ -217,10 +216,8 @@ func dbGetTeamMembers(teamid string) ([]TeamMember, error) {
 				ret = append(ret, *mbr)
 			}
 		}
-	} else {
-		fmt.Println(err.Error())
 	}
-	return ret, nil
+	return ret, err
 }
 
 func dbGetTeamMember(teamid, mbrid string) (*TeamMember, error) {

@@ -31,7 +31,7 @@ func (p *pageSession) setStringValue(key, val string) {
 	p.session.Save(p.req, p.w)
 }
 
-func (p *pageSession) getClientID() string {
+func (p *pageSession) getClientId() string {
 	var clientId string
 	var err error
 	if clientId, err = p.getStringValue("client_id"); err != nil {

@@ -1,13 +1,10 @@
 <script>
-var clientID = "{{.ClientID}}";
+var clientId = "{{.ClientId}}";
 </script>
 <aside class="flash center {{.FlashClass}}">
   {{.FlashMessage}}
 </aside>
 <div class="content">
-  <div class="header">
-    devICT Game Jam - {{.CurrentJam}}
-  </div>
   {{ if .SubTitle }}
   <div class="header-menu">
     <h2>{{.SubTitle}}</h2>

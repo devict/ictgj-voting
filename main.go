@@ -51,7 +51,7 @@ type pageData struct {
 	HideAdminMenu  bool
 	session        *pageSession
 	CurrentJam     string
-	ClientID       string
+	ClientId       string
 	ClientIsAuth   bool
 	ClientIsServer bool
 	TeamID         string
@@ -91,6 +91,7 @@ func main() {
 	// Public Subrouter
 	pub := r.PathPrefix("/").Subrouter()
 	pub.HandleFunc("/", handleMain)
+	pub.HandleFunc("/vote", handlePublicSaveVote)
 
 	// API Subrouter
 	//api := r.PathPrefix("/api").Subtrouter()
@@ -265,8 +266,8 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 		p.FlashClass = "error"
 	}
 
-	p.ClientID = p.session.getClientID()
-	p.ClientIsAuth = clientIsAuthenticated(p.ClientID, req)
+	p.ClientId = p.session.getClientId()
+	p.ClientIsAuth = clientIsAuthenticated(p.ClientId, req)
 	p.ClientIsServer = clientIsServer(req)
 	// TeamID is for team self-administration
 	p.TeamID, _ = p.session.getStringValue("teamid")

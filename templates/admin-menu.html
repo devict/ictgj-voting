@@ -13,10 +13,10 @@
       </ul>
       {{ if .ClientIsAuth }}
         {{ if not .ClientIsServer }}
-        <a href="/admin/clients/{{.ClientID}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
+        <a href="/admin/clients/{{.ClientId}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
         {{ end }}
       {{ else }}
-      <a href="/admin/clients/{{.ClientID}}/add" class="pure-menu-link"><i class="fa fa-key"></i> Auth Client</a>
+      <a href="/admin/clients/{{.ClientId}}/add" class="pure-menu-link"><i class="fa fa-key"></i> Auth Client</a>
       {{ end }}
       <ul class="pure-menu-list menu-bottom">
         {{ range $k, $v := .BottomMenu }}

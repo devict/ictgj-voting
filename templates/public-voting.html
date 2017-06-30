@@ -1,1 +1,304 @@
-<h1>VOTING TIME</h1>
+{{ if not .TemplateData.Teams }}
+<div>No games have been created</div>
+{{ else }}
+<div class="content">
+Rank one or more games from your favorite to least favorite.
+</div>
+<div class="content">
+  <h2>Your Choices</h2>
+  <table id="ranked-table" class="pure-table pure-table-bordered center">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Game Name</th>
+        <th>Team Name</th>
+        <th>Screenshots</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</div>
+<div class="content">
+  <h2>Unranked Games</h2>
+  <table id="unranked-table" class="pure-table pure-table-bordered center">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Game Name</th>
+        <th>Team Name</th>
+        <th>Screenshots</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range $i, $v := .TemplateData.Teams }} 
+      <tr id="teamrow-{{$v.UUID}}" data-teamid="{{$v.UUID}}">
+        <td class="unranked-actions"><a class="pure-button pure-button-primary" href="javascript:moveToRanked('{{$v.UUID}}');"><i class="fa fa-plus"></i> Add to Vote</a></td>
+        <td class="voting-col game-name">{{ $v.Game.Name }}</td>
+        <td class="voting-col team-name">{{ $v.Name }}</td>
+        <td class="voting-col game-screenshots" data-sscount="{{len $v.Game.Screenshots}}">
+          {{ if not $v.Game.Screenshots }}
+          <i class="fa fa-image"></i> (No Screenshots)
+          {{ else }}
+          <a class="primary" tabindex="-1" href="javascript:showScreenshots({{$v.UUID}});"><i class="fa fa-image"></i> ({{ len $v.Game.Screenshots }})</a>
+          {{ end }}
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+<div class="content half">
+  <form action="/vote">
+    <input id="uservote" type="hidden" name="uservote" value="" />
+    <input id="timestamp" type="hidden" name="timestamp" value="{{.TemplateData.Timestamp}}" />
+    <button class="pure-button pure-button-primary space-vertical pull-right" type="submit">Submit Vote!</button>
+  </form>
+</div>
+{{ end }}
+<script>
+
+function updateView() {
+  updateButtonStates();
+  var rankedCells = snack.wrap('#ranked-table>tbody>tr>td.rank-cell');
+  for(var i = 0; i < rankedCells.length; i++) {
+    rankedCells[i].innerText = i+1;
+  }
+  setUserVoteValue();
+}
+
+function setUserVoteValue() {
+  document.getElementById('uservote').value=getRankedCSV();
+}
+
+// moveToRanked takes the uuid of a game/team and moves that game to the
+// bottom of the 'ranked' table
+function moveToRanked(tmUUID) {
+  // First, find the team's row
+  var rows = snack.wrap('#teamrow-'+tmUUID);
+  if(rows.length > 0) {
+    var row = rows[0];
+    var delCell = row.getElementsByClassName('unranked-actions');
+    if(delCell.length > 0) {
+      delCell = delCell[0];
+    }
+    delCell.remove();
+    var tbody = snack.wrap('#ranked-table>tbody')[0];
+    var rankTd = document.createElement('td');
+    rankTd.classList.add('rank-cell');
+    row.prepend(rankTd);
+    row.append(createRankedActionsTd(tmUUID));
+    tbody.append(row)
+  }
+  updateView();
+}
+
+function moveRankedUp(tmUUID) {
+  var rows = snack.wrap('#ranked-table>tbody>tr');
+  var numRows = rows.length;
+  var tbody = snack.wrap('#ranked-table>tbody')[0];
+  if(rows.length > 0) {
+    // Just loop through the rows adding them to the table
+    // if the _next_ row is the row for this team, add it now
+    for(var i = 0; i < numRows; i++) {
+      if(numRows > i && rows[i+1] != null
+          && rows[i+1].dataset.teamid == tmUUID) {
+        // The next one is the one we're moving up
+        // Append the _next_ one, then this one
+        tbody.append(rows[i+1]);
+        tbody.append(rows[i]);
+        // Increment i manually, since we already added the next row
+        i++;
+      } else {
+        // Otherwise just add the row
+        tbody.append(rows[i]);
+      }
+    }
+  }
+  updateView();
+}
+
+function updateButtonStates() {
+  var upBtns = snack.wrap('.ranked-move-up');
+  for(var i = 0; i < upBtns.length; i++) {
+    if(i == 0) {
+      upBtns[i].disabled=true;
+    } else {
+      upBtns[i].disabled=false;
+    }
+  }
+  var downBtns = snack.wrap('.ranked-move-down');
+  for(var i = 0; i < downBtns.length; i++) {
+    if(i == downBtns.length-1) {
+      downBtns[i].disabled=true;
+    } else {
+      downBtns[i].disabled=false;
+    }
+  }
+
+}
+
+function moveRankedDown(tmUUID) {
+  var rows = snack.wrap('#ranked-table>tbody>tr');
+  var numRows = rows.length;
+  var tbody = snack.wrap('#ranked-table>tbody')[0];
+  if(numRows > 0) {
+    // Just loop through the rows adding them to the table
+    // When we hit the row for this team, delay it by one
+    for(var i = 0; i < numRows; i++) {
+      if(rows[i].dataset.teamid == tmUUID && numRows > i) {
+        // This is the one we're moving down
+        // Append the _next_ one, then this one
+        tbody.append(rows[i+1]);
+        tbody.append(rows[i]);
+        // Increment i manually, since we already added the next row
+        i++;
+      } else {
+        // Otherwise just add the row
+        tbody.append(rows[i]);
+      }
+    }
+  }
+  updateView();
+}
+
+// moveToRanked takes the uuid of a game/team and moves that game to the
+// bottom of the 'unranked' table
+function moveToUnranked(tmUUID) {
+  // First, find the team's row
+  var rows = snack.wrap('#teamrow-'+tmUUID);
+  if(rows.length > 0) {
+    var row = rows[0];
+    // Remove the cells we don't need
+    var actCell = row.getElementsByClassName('ranked-actions');
+    if(actCell.length > 0) {
+      actCell = actCell[0];
+    }
+    actCell.remove();
+    var rankTd = row.getElementsByClassName('rank-cell');
+    if(rankTd.length > 0) {
+      rankTd = rankTd[0];
+    }
+    rankTd.remove();
+    // Add the cells we do
+    row.prepend(createUnrankedActionsTd(tmUUID));
+    // And add the row to the unranked table
+    var tbody = snack.wrap('#unranked-table>tbody')[0];
+    tbody.append(row);
+  }
+  updateView();
+}
+
+// getUnranked returns an array of games that haven't been ranked yet
+// (it builds the array from the 'unranked' table)
+function getUnranked() {
+  return gameTableToArray('unranked');
+}
+
+// getRanked returns an array of games that the user has ranked
+// (it builds the array from the 'ranked' table)
+function getRanked() {
+  return gameTableToArray('ranked');
+}
+
+// Converts either the 'ranked' or 'unranked' table to an array of objects
+// 'tbl' should be either 'ranked' or 'unranked'
+function gameTableToArray(tbl) {
+  var ret = [];
+  snack.wrap('#'+tbl+'-table>tbody>tr').each(function(ele, idx) {
+    ret = ret.concat(getTeamObj(ele.dataset.teamid));
+  });
+  return ret;
+}
+
+// getTeamObj returns an object for team tmUUID from table
+function getTeamObj(tmUUID) {
+  var ret = null;
+  var rows = snack.wrap('#teamrow-'+tmUUID);
+  if(rows.length > 0) {
+    var ele = rows[0];
+    ret = {
+      uuid: tmUUID,
+      name: ele.getElementsByClassName('game-name')[0].innerText,
+      teamName: ele.getElementsByClassName('team-name')[0].innerText,
+      ssCount: ele.getElementsByClassName('game-screenshots')[0].dataset.sscount
+    };
+  }
+  return ret;
+}
+
+// getRankedCSV pulls the getRanked array and just returns a CSV of
+// the team IDs in ranked order
+// (This is how the 'vote' post expects it)
+function getRankedCSV() {
+  var r = getRanked();
+  var ret = "";
+  for(var i = 0; i < r.length; i++) {
+    ret = ret + r[i].uuid+",";
+  }
+  // Remove the trailing ","
+  if(ret.endsWith(",")) {
+    ret = ret.slice(0, ret.length-2);
+  }
+  return ret;
+}
+
+// createRankedActionsTd creates the td that holds all of the action
+// buttons for a 'ranked' table row
+function createRankedActionsTd(tmUUID) {
+  var td = document.createElement('td');
+  td.classList.add('ranked-actions');
+  var upBtn = document.createElement('button');
+  upBtn.classList.add('ranked-move-up', 'pure-button', 'pure-button-toggle-first', 'pure-button-primary');
+  upBtn.innerHTML = '<i class="fa fa-arrow-up"></i> Move Up';
+  snack.listener({
+    node: upBtn,
+    event: 'click'
+  }, function() {
+    moveRankedUp(tmUUID);
+  });
+  td.appendChild(upBtn);
+  var dnBtn = document.createElement('button');
+  dnBtn.classList.add('ranked-move-down', 'pure-button', 'pure-button-toggle-middle', 'pure-button-primary');
+  dnBtn.innerHTML = '<i class="fa fa-arrow-down"></i> Move Down';
+  snack.listener({
+    node: dnBtn,
+    event: 'click'
+  }, function() {
+    moveRankedDown(tmUUID);
+  });
+  td.appendChild(dnBtn);
+  var delBtn = document.createElement('button');
+  delBtn.dataset.teamid=tmUUID
+  delBtn.classList.add('ranked-remove', 'pure-button', 'pure-button-toggle-last', 'pure-button-error');
+  delBtn.innerHTML = '<i class="fa fa-times"></i> Remove';
+  snack.listener({
+    node: delBtn,
+    event: 'click'
+  }, function (){
+    moveToUnranked(tmUUID);
+  });
+  td.appendChild(delBtn);
+  return td;
+}
+
+// createUnrankedActionsTd created the td that holds the 'Add to Vote' button
+function createUnrankedActionsTd(tmUUID) {
+  var td = document.createElement('td');
+  td.classList.add('unranked-actions');
+  var addBtn = document.createElement('button');
+  addBtn.dataset.teamid=tmUUID
+  addBtn.classList.add('pure-button', 'pure-button-toggle-last', 'pure-button-primary');
+  addBtn.innerHTML = '<i class="fa fa-plus"></i> Add to Vote';
+  var params = {
+    node: addBtn,
+    event: 'click'
+  }
+  snack.listener(params, function (){
+    moveToRanked(addBtn.dataset.teamid);
+  })
+  td.appendChild(addBtn);
+  return td;
+}
+</script>

@@ -15,21 +15,11 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 	teamId := vars["id"]
 	if teamId == "" {
 		// Games List
-		type gamePage struct {
-			Game *Game
-			Team *Team
-		}
 		type gamesPageData struct {
-			Games []gamePage
+			Teams []Team
 		}
 		gpd := new(gamesPageData)
-		allGames := dbGetAllGames()
-		for _, gm := range allGames {
-			gamePage := new(gamePage)
-			gamePage.Game = &gm
-			gamePage.Team = dbGetTeam(gm.TeamId)
-			gpd.Games = append(gpd.Games, *gamePage)
-		}
+		gpd.Teams = dbGetAllTeams()
 		page.TemplateData = gpd
 		page.SubTitle = "Games"
 		page.show("admin-games.html", w)

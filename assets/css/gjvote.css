@@ -7,14 +7,30 @@ body {
   min-ehgiht: 100%;
 }
 
+a {
+  text-decoration: none;
+}
+
 div.content {
   padding: 15px;
   min-height: 100%;
   color: black;
 }
 
+div.half {
+  width: 50%;
+}
+
 .header {
   margin-left: 0;
+}
+
+.primary {
+  color: #0078e7;
+}
+
+.primary-bg {
+  background-color: #0078e7;
 }
 
 input.file {
@@ -23,6 +39,20 @@ input.file {
   border: 1px solid #ccc;
   box-shadow: inset 0 1px 3px #ddd;
   border-radius: 4px;
+}
+
+input.ranking-input {
+  width: 50px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  text-align: center;
+}
+
+button.submit-vote {
+}
+
+i.move-icon {
+  cursor: ns-resize;
 }
 
 #menu {
@@ -100,6 +130,11 @@ img.thumbnail {
   margin-right: 5px;
 }
 
+.space-vertical {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
 .big-space {
   margin: 10px;
 }
@@ -139,14 +174,19 @@ table.padding td {
 }
 .pure-button-toggle-middle {
   border-radius: 0px;
-  margin-left: -5px;
+  margin-left: -1px;
   border-left: 1px solid #CCC;
 }
 .pure-button-toggle-last {
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
-  margin-left: -5px;
+  margin-left: -1px;
   border-left: 1px solid #CCC;
+}
+
+.pure-button:disabled {
+  background-color: #CCC;
+  color: #999;
 }
 
 #modal-overlay {
