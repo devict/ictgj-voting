@@ -32,6 +32,8 @@ type siteData struct {
 	DevMode     bool
 
 	CurrentJam string
+
+	AllVotes []Vote
 }
 
 // pageData is stuff that changes per request
@@ -199,6 +201,9 @@ func initialize() {
 	} else {
 		fmt.Println(err.Error())
 	}
+
+	// Load all votes into memory
+	site.AllVotes = dbGetAllVotes()
 }
 
 func loggingHandler(h http.Handler) http.Handler {

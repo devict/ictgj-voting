@@ -5,7 +5,7 @@
     </tr>
   </thead>
   <tbody>
-    {{ range $i, $v, := .TemplateData.Votes }}
+    {{ range $i, $v, := .Site.AllVotes }}
     <tr>
       <td>{{ $v.Timestamp }}</td>
     </tr>
