@@ -237,10 +237,6 @@ function getRankedCSV() {
   for(var i = 0; i < r.length; i++) {
     ret = ret + r[i].uuid+",";
   }
-  // Remove the trailing ","
-  if(ret.endsWith(",")) {
-    ret = ret.slice(0, ret.length-2);
-  }
   return ret;
 }
 

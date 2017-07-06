@@ -6,6 +6,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func refreshTeamsInMemory() {
+	site.Teams = dbGetAllTeams()
+}
+
 func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) {
 	vars := mux.Vars(req)
 	page.SubTitle = "Teams"
@@ -25,6 +29,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 					page.session.setFlashMessage("Team "+name+" created!", "success")
 				}
 			}
+			refreshTeamsInMemory()
 			redirect("/admin/teams", w, req)
 		default:
 			page.SubTitle = "Add New Team"
@@ -43,6 +48,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				} else {
 					page.session.setFlashMessage("Team Updated!", "success")
 				}
+				refreshTeamsInMemory()
 				redirect("/admin/teams", w, req)
 			case "delete":
 				var err error
@@ -52,6 +58,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				} else {
 					page.session.setFlashMessage("Team "+t.Name+" Deleted", "success")
 				}
+				refreshTeamsInMemory()
 				redirect("/admin/teams", w, req)
 			case "savemember":
 				mbrName := req.FormValue("newmembername")
@@ -63,6 +70,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				} else {
 					page.session.setFlashMessage(mbrName+" added to team!", "success")
 				}
+				refreshTeamsInMemory()
 				redirect("/admin/teams/"+teamId, w, req)
 			case "deletemember":
 				mbrId := req.FormValue("memberid")
@@ -72,6 +80,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				} else {
 					page.session.setFlashMessage(m.Name+" deleted from team", "success")
 				}
+				refreshTeamsInMemory()
 				redirect("/admin/teams/"+teamId, w, req)
 			default:
 				page.SubTitle = "Edit Team"

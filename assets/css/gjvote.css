@@ -4,7 +4,7 @@ html {
 
 body {
   color: #777;
-  min-ehgiht: 100%;
+  min-height: 100%;
 }
 
 a {
@@ -155,12 +155,16 @@ img.thumbnail {
   margin: auto;
 }
 
-table.center td {
+table.center tbody>td {
   text-align: center;
 }
 
 table.padding td {
   padding: 5px;
+}
+
+table tfoot {
+  border-top: 1px solid #CCC;
 }
 
 .pure-button-error {

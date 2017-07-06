@@ -1,6 +1,6 @@
 package main
 
-//go:generate esc -o assets.go assets
+//go:generate esc -o assets.go assets templates
 
 import (
 	"bufio"
@@ -33,7 +33,8 @@ type siteData struct {
 
 	CurrentJam string
 
-	AllVotes []Vote
+	Teams []Team
+	Votes []Vote
 }
 
 // pageData is stuff that changes per request
@@ -203,7 +204,8 @@ func initialize() {
 	}
 
 	// Load all votes into memory
-	site.AllVotes = dbGetAllVotes()
+	site.Votes = dbGetAllVotes()
+	site.Teams = dbGetAllTeams()
 }
 
 func loggingHandler(h http.Handler) http.Handler {
@@ -304,13 +306,10 @@ func (p *pageData) show(tmplName string, w http.ResponseWriter) error {
 // Spit out a template
 func outputTemplate(tmplName string, tmplData interface{}, w http.ResponseWriter) error {
 	// TODO: Use embedded files for these... Hopefully?
-	_, err := os.Stat("templates/" + tmplName)
-	if err == nil {
-		t := template.New(tmplName)
-		t, _ = t.ParseFiles("templates/" + tmplName)
-		return t.Execute(w, tmplData)
-	}
-	return fmt.Errorf("WebServer: Cannot load template (templates/%s): File not found", tmplName)
+	n := "/templates/" + tmplName
+	l := template.Must(template.New("layout").Parse(FSMustString(site.DevMode, n)))
+	t := template.Must(l.Parse(FSMustString(site.DevMode, n)))
+	return t.Execute(w, tmplData)
 }
 
 // redirect can be used only for GET redirects

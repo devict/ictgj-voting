@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -75,18 +76,17 @@ func dbGetVote(clientId string, timestamp time.Time) (*Vote, error) {
 	vt.ClientId = clientId
 	votesBkt := []string{"votes", clientId, timestamp.Format(time.RFC3339)}
 	var choices []string
-	if choices, err = db.GetBucketList(votesBkt); err != nil {
+	if choices, err = db.GetKeyList(votesBkt); err != nil {
 		// Couldn't find the vote...
 		return nil, err
 	}
 	for _, v := range choices {
 		ch := new(GameChoice)
 		var rank int
+
 		if rank, err = strconv.Atoi(v); err == nil {
 			ch.Rank = rank
 			ch.Team, err = db.GetValue(votesBkt, v)
-		}
-		if err == nil {
 			vt.Choices = append(vt.Choices, *ch)
 		}
 	}
@@ -102,7 +102,9 @@ func dbSaveVote(clientId string, timestamp time.Time, votes []string) error {
 	// Make sure we don't clobber a duplicate vote
 	votesBkt := []string{"votes", clientId, timestamp.Format(time.RFC3339)}
 	for i := range votes {
-		db.SetValue(votesBkt, strconv.Itoa(i), votes[i])
+		if strings.TrimSpace(votes[i]) != "" {
+			db.SetValue(votesBkt, strconv.Itoa(i), votes[i])
+		}
 	}
 	return err
 }

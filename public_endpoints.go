@@ -58,7 +58,7 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 		page.session.setFlashMessage("Error Saving Vote: "+err.Error(), "error")
 	}
 	if newVote, err := dbGetVote(page.ClientId, timestamp); err == nil {
-		site.AllVotes = append(site.AllVotes, *newVote)
+		site.Votes = append(site.Votes, *newVote)
 	}
 	redirect("/", w, req)
 }
