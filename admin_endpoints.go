@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -40,8 +41,25 @@ func handleAdmin(w http.ResponseWriter, req *http.Request) {
 			handleAdminGames(w, req, page)
 		case "clients":
 			handleAdminClients(w, req, page)
+		case "votes":
+			handleAdminVotes(w, req, page)
+		case "mode":
+			handleAdminSetMode(w, req, page)
 		default:
+			page.TemplateData = getCondorcetResult()
 			page.show("admin-main.html", w)
 		}
 	}
+}
+
+func handleAdminSetMode(w http.ResponseWriter, req *http.Request, page *pageData) {
+	vars := mux.Vars(req)
+	newMode, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		page.session.setFlashMessage("Invalid Mode: "+vars["id"], "error")
+	}
+	if dbSetPublicSiteMode(newMode) != nil {
+		page.session.setFlashMessage("Invalid Mode: "+vars["id"], "error")
+	}
+	redirect("/admin", w, req)
 }

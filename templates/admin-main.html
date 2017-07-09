@@ -1,6 +1,24 @@
 <div class="content">
-  <button onclick="window.location.href='/admin/votes'">Votes</button>
-  <button onclick="window.location.href='/admin/teams'">Teams</button>
-  <button onclick="window.location.href='/admin/games'">Games</button>
-  <button onclick="window.location.href='/admin/users'">Users</button>
+  <div>
+    <h3>Public Mode</h3>
+    <button onclick="window.location.href='/admin/mode/0'" class="pure-button-toggle-first pure-button {{ if eq .PublicMode 0 }}pure-button-primary{{ end }}">Waiting</button>
+    <button onclick="window.location.href='/admin/mode/1'" class="pure-button-toggle-last pure-button {{ if eq .PublicMode 1 }}pure-button-primary{{ end }}">Voting</button>
+  </div>
+  {{ if eq .PublicMode 1 }}
+  <div>
+    <h3>Current Results</h3>
+    <ol>
+    {{ range $i, $v := .TemplateData }}
+      <li>{{ $v.Name }}</li>
+    {{ end }}
+    </ol>
+  </div>
+  {{ end }}
+  <div>
+    <h3>Admin Sections</h3>
+    <button class="pure-button" onclick="window.location.href='/admin/votes'">Votes</button>
+    <button class="pure-button" onclick="window.location.href='/admin/teams'">Teams</button>
+    <button class="pure-button" onclick="window.location.href='/admin/games'">Games</button>
+    <button class="pure-button" onclick="window.location.href='/admin/users'">Users</button>
+  </div>
 </div>

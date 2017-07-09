@@ -1,0 +1,35 @@
+<h2>Current Results</h2>
+<ol>
+{{ range $i, $v := .TemplateData.Results }}
+  <li>{{ $v.Name }}</li>
+{{ end }}
+</ol>
+<table id="votes-table" class="sortable pure-table pure-table-bordered center">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Client ID</th>
+      <th>Rankings</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range $i, $v := .TemplateData.AllVotes }}
+    <tr>
+      <td>{{ $v.Timestamp }}</td>
+      <td>{{ $v.ClientId }}</td>
+      <td>
+        <ol>
+        {{ range $ci, $cv := $v.Choices }}
+          <li>{{ $cv.Name }}</li>
+        {{ end }}
+        </ol>
+      </td>
+    </tr>
+    {{ end }}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td class="left" colspan="3">{{ len .Site.Votes }} Total Votes</td>
+    </tr>
+  </tfoot>
+</table>

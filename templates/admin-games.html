@@ -1,0 +1,22 @@
+{{ if not .TemplateData.Teams }}
+<div>No games have been created</div>
+{{ else }}
+<table id="games-table" class="sortable pure-table pure-table-bordered center">
+  <thead>
+    <tr>
+      <th>Game Name</th>
+      <th>Team Name</th>
+      <th>Screenshots</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range $i, $v := .TemplateData.Teams }} 
+    <tr>
+      <td>{{ $v.Game.Name }}</td>
+      <td>{{ $v.Name }}</td>
+      <td>{{ len $v.Game.Screenshots }}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{ end }}

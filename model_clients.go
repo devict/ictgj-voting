@@ -3,6 +3,8 @@ package main
 type Client struct {
 	UUID string
 	Auth bool
+	Name string
+	IP   string
 }
 
 func dbGetAllClients() []Client {
@@ -35,7 +37,30 @@ func dbGetClient(id string) *Client {
 	cl := new(Client)
 	cl.UUID = id
 	cl.Auth = dbClientIsAuth(id)
+	cl.Name, _ = db.GetValue([]string{"clients", id}, "name")
+	cl.IP, _ = db.GetValue([]string{"clients", id}, "ip")
 	return cl
+}
+
+func dbSetClientName(cid, name string) error {
+	var err error
+	if err = db.OpenDB(); err != nil {
+		return nil
+	}
+	defer db.CloseDB()
+
+	err = db.SetValue([]string{"clients", cid}, "name", name)
+	return err
+}
+
+func dbGetClientName(cid string) string {
+	if err := db.OpenDB(); err != nil {
+		return ""
+	}
+	defer db.CloseDB()
+
+	name, _ := db.GetValue([]string{"clients", cid}, "name")
+	return name
 }
 
 func dbAddDeauthClient(cid, ip string) error {
