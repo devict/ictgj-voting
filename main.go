@@ -37,6 +37,15 @@ type siteData struct {
 	Votes []Vote
 }
 
+func (s *siteData) getTeamByUUID(uuid string) *Team {
+	for i := range s.Teams {
+		if s.Teams[i].UUID == uuid {
+			return &s.Teams[i]
+		}
+	}
+	return nil
+}
+
 // pageData is stuff that changes per request
 type pageData struct {
 	Site           *siteData

@@ -1,3 +1,9 @@
+<h2>Current Results</h2>
+<ol>
+{{ range $i, $v := .TemplateData.Results }}
+  <li>{{ $v.Name }}</li>
+{{ end }}
+</ol>
 <table id="votes-table" class="sortable pure-table pure-table-bordered center">
   <thead>
     <tr>

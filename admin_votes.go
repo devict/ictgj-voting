@@ -1,82 +1,108 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 )
 
+// getCondorcetResult returns the ranking of teams based on the condorcet method
+// https://en.wikipedia.org/wiki/Condorcet_method
 func getCondorcetResult() []Team {
+	type teamPair struct {
+		winner   *Team
+		loser    *Team
+		majority float32
+	}
+	var allPairs []teamPair
 	var ret []Team
-	type rankedTeam struct {
-		tm     *Team
-		wins   map[string]int
-		losses map[string]int
+	for i := 0; i < len(site.Teams); i++ {
+		for j := i + 1; j < len(site.Teams); j++ {
+			// For each pairing find a winner
+			winner, pct, _ := findWinnerBetweenTeams(&site.Teams[i], &site.Teams[j])
+			if winner != nil {
+				newPair := new(teamPair)
+				newPair.winner = winner
+				if winner.UUID == site.Teams[i].UUID {
+					newPair.loser = &site.Teams[j]
+				} else {
+					newPair.loser = &site.Teams[i]
+				}
+				newPair.majority = pct
+				allPairs = append(allPairs, *newPair)
+			}
+		}
 	}
-	// Build our Ranked Teams slice
-	allRanks := make(map[string]rankedTeam)
+	teamWins := make(map[string]int)
 	for i := range site.Teams {
-		rt := new(rankedTeam)
-		rt.wins = make(map[string]int)
-		rt.losses = make(map[string]int)
-		rt.tm = &site.Teams[i]
-		for j := range site.Teams {
-			if site.Teams[i].UUID != site.Teams[j].UUID {
-				rt.wins[site.Teams[j].UUID] = 0
-				rt.losses[site.Teams[j].UUID] = 0
-			}
-		}
-		allRanks[site.Teams[i].UUID] = *rt
+		teamWins[site.Teams[i].UUID] = 0
 	}
-	/*
-		Go through all votes, for each choice (ct):
-		* Go through all teams (tm)
-			* if tm was processed earlier, do nothing
-			* otherwise mark a win for ct against tm, and a loss for tm against cm
-	*/
-	// Now go through all of the votes and figure wins/losses for each team
-	for _, vt := range site.Votes {
-		for i := 0; i < len(vt.Choices); i++ {
-			var p []string
-			for j := i; j < len(vt.Choices); j++ {
-				// vt.Choices[i] wins against vt.Choices[j]
-				p = append(p, vt.Choices[j].Team)
-				allRanks[vt.Choices[i].Team].wins[vt.Choices[j].Team]++
-				allRanks[vt.Choices[j].Team].losses[vt.Choices[i].Team]++
-			}
-			// Now go through site.Teams for every team that isn't vt.Choices[i]
-			// and isn't in 'p', mark it as a loss for the unused team
-			for j := range site.Teams {
-				var isUsed bool
-				if site.Teams[j].UUID == vt.Choices[i].Team {
-					continue
-				}
-				for k := range p {
-					if site.Teams[j].UUID == p[k] {
-						isUsed = true
-					}
-				}
-				if !isUsed {
-					allRanks[vt.Choices[i].Team].wins[site.Teams[j].UUID]++
-					allRanks[site.Teams[j].UUID].losses[vt.Choices[i].Team]++
-				}
-			}
-		}
+	for i := range allPairs {
+		teamWins[allPairs[i].winner.UUID]++
 	}
-	for _, v := range allRanks {
-		fmt.Println("\n" + v.tm.UUID)
-		fmt.Println("  Wins:")
-		for k, v := range v.wins {
-			fmt.Print("    ", k, ":", v, "\n")
+	for len(teamWins) > 0 { //len(ret) <= len(site.Teams) {
+		topWins := 0
+		var topTeam string
+		for k, v := range teamWins {
+			// If this team is already in ret, carry on
+			if uuidIsInTeamSlice(k, ret) {
+				continue
+			}
+			// If this is the last key in teamWins, just add it
+			if len(teamWins) == 1 || v > topWins {
+				topWins = v
+				topTeam = k
+			}
 		}
-		fmt.Println("  Losses:")
-		for k, v := range v.losses {
-			fmt.Print("    ", k, ":", v, "\n")
+		// Remove topTeam from map
+		delete(teamWins, topTeam)
+		// Now add topTeam to ret
+		addTeam := site.getTeamByUUID(topTeam)
+		if addTeam != nil {
+			ret = append(ret, *addTeam)
+		} else {
+			break
 		}
 	}
 	return ret
+}
+
+// This is a helper function for calculating results
+func uuidIsInTeamSlice(uuid string, sl []Team) bool {
+	for _, v := range sl {
+		if v.UUID == uuid {
+			return true
+		}
+	}
+	return false
+}
+
+// findWinnerBetweenTeams returns the team that got the most votes
+// and the percentage of votes they received
+// or an error if a winner couldn't be determined.
+func findWinnerBetweenTeams(tm1, tm2 *Team) (*Team, float32, error) {
+	// tally gets incremented for a tm1 win, decremented for a tm2 win
+	var tm1votes, tm2votes float32
+	for _, v := range site.Votes {
+		for _, chc := range v.Choices {
+			if chc.Team == tm1.UUID {
+				tm1votes++
+				break
+			} else if chc.Team == tm2.UUID {
+				tm2votes++
+				break
+			}
+		}
+	}
+	ttlVotes := tm1votes + tm2votes
+	if tm1votes > tm2votes {
+		return tm1, 100 * (tm1votes / ttlVotes), nil
+	} else if tm1votes < tm2votes {
+		return tm2, 100 * (tm2votes / ttlVotes), nil
+	}
+	return nil, 50, errors.New("Unable to determine a winner")
 }
 
 func getInstantRunoffResult() []Team {
@@ -95,6 +121,7 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 	}
 	type votePageData struct {
 		AllVotes []vpdVote
+		Results  []Team
 	}
 	vpd := new(votePageData)
 	for i := range site.Votes {
@@ -111,8 +138,8 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 		}
 		vpd.AllVotes = append(vpd.AllVotes, *v)
 	}
+	vpd.Results = getCondorcetResult()
 	page.TemplateData = vpd
-	_ = getCondorcetResult()
 
 	switch vars["function"] {
 	default:

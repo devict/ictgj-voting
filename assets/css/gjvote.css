@@ -115,6 +115,7 @@ img.thumbnail {
   display: block;
   height: 120px;
   background-color: #EEE;
+  padding-top: 20px;
 }
 
 .padding {

@@ -46,6 +46,7 @@ func handleAdmin(w http.ResponseWriter, req *http.Request) {
 		case "mode":
 			handleAdminSetMode(w, req, page)
 		default:
+			page.TemplateData = getCondorcetResult()
 			page.show("admin-main.html", w)
 		}
 	}

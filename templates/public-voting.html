@@ -1,63 +1,100 @@
 {{ if not .TemplateData.Teams }}
-<div>No games have been created</div>
-{{ else }}
-<div class="content">
-Rank one or more games from your favorite to least favorite.
-</div>
-<div class="content">
-  <h2>Your Choices</h2>
-  <table id="ranked-table" class="pure-table pure-table-bordered center">
-    <thead>
-      <tr>
-        <th>Rank</th>
-        <th>Game Name</th>
-        <th>Team Name</th>
-        <th>Screenshots</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-</div>
-<div class="content">
-  <h2>Unranked Games</h2>
-  <table id="unranked-table" class="pure-table pure-table-bordered center">
-    <thead>
-      <tr>
-        <th></th>
-        <th>Game Name</th>
-        <th>Team Name</th>
-        <th>Screenshots</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{ range $i, $v := .TemplateData.Teams }} 
-      <tr id="teamrow-{{$v.UUID}}" data-teamid="{{$v.UUID}}">
-        <td class="unranked-actions"><a class="pure-button pure-button-primary" href="javascript:moveToRanked('{{$v.UUID}}');"><i class="fa fa-plus"></i> Add to Vote</a></td>
-        <td class="voting-col game-name">{{ $v.Game.Name }}</td>
-        <td class="voting-col team-name">{{ $v.Name }}</td>
-        <td class="voting-col game-screenshots" data-sscount="{{len $v.Game.Screenshots}}">
-          {{ if not $v.Game.Screenshots }}
-          <i class="fa fa-image"></i> (No Screenshots)
-          {{ else }}
-          <a class="primary" tabindex="-1" href="javascript:showScreenshots({{$v.UUID}});"><i class="fa fa-image"></i> ({{ len $v.Game.Screenshots }})</a>
-          {{ end }}
-        </td>
-      </tr>
+  <div>No games have been created</div>
+  {{ else }}
+  <div class="content">
+  Rank one or more games from your favorite to least favorite.
+  </div>
+  <div class="content">
+    <h2>Your Choices</h2>
+    <table id="ranked-table" class="pure-table pure-table-bordered center">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Game Name</th>
+          <th>Team Name</th>
+          <th>Screenshots</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <div class="content">
+    <h2>Unranked Games</h2>
+    <table id="unranked-table" class="pure-table pure-table-bordered center">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Game Name</th>
+          <th>Team Name</th>
+          <th>Screenshots</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range $i, $v := .TemplateData.Teams }} 
+        <tr id="teamrow-{{$v.UUID}}" data-teamid="{{$v.UUID}}">
+          <td class="unranked-actions"><a class="pure-button pure-button-primary" href="javascript:moveToRanked('{{$v.UUID}}');"><i class="fa fa-plus"></i> Add to Vote</a></td>
+          <td class="voting-col game-name">{{ $v.Game.Name }}</td>
+          <td class="voting-col team-name">{{ $v.Name }}</td>
+          <td class="voting-col game-screenshots" data-sscount="{{len $v.Game.Screenshots}}">
+            {{ if not $v.Game.Screenshots }}
+            <i class="fa fa-image"></i> (No Screenshots)
+            {{ else }}
+            <a class="primary" tabindex="-1" href="javascript:showScreenshots('{{$v.UUID}}');"><i class="fa fa-image"></i> ({{ len $v.Game.Screenshots }}) Click to View</a>
+            {{ end }}
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <div class="content half">
+    <form action="/vote">
+      <input id="uservote" type="hidden" name="uservote" value="" />
+      <input id="timestamp" type="hidden" name="timestamp" value="{{.TemplateData.Timestamp}}" />
+      <button class="pure-button pure-button-primary space-vertical pull-right" type="submit">Submit Vote!</button>
+    </form>
+  </div>
+  {{ range $i, $v := .TemplateData.Teams }} 
+  <div class="pure-control-group" id="screenshots-{{ $v.UUID }}" style="display:none;">
+    <h3>{{ $v.Game.Name }} by {{ $v.Name }}</h3>
+    <label class="control-label">Click to view original size</label>
+    <div class="center-all horizontal-scroll thumbnail-container" id="thumbnail-container">
+      {{ range $imgi, $imgv := $v.Game.Screenshots }}
+      <a href="javascript:embiggenScreenshot(this.getElementsByTagName('img')[0]);">
+        <img data-teamid="{{ $v.UUID }}" data-ssid="{{ $imgv.UUID }}" class="thumbnail" alt="{{ $imgv.Description }}" src="data:image/png;base64,{{ $imgv.Image }}" />
+      </a>
       {{ end }}
-    </tbody>
-  </table>
-</div>
-<div class="content half">
-  <form action="/vote">
-    <input id="uservote" type="hidden" name="uservote" value="" />
-    <input id="timestamp" type="hidden" name="timestamp" value="{{.TemplateData.Timestamp}}" />
-    <button class="pure-button pure-button-primary space-vertical pull-right" type="submit">Submit Vote!</button>
-  </form>
-</div>
+    </div>
+  </div>
+  {{ end }}
 {{ end }}
 <script>
+var teamNames = { };
+{{ range $i, $v := .TemplateData.Teams }}
+teamNames[{{$v.UUID}}] = { "team-name": "{{$v.Name}}", "game-name": "{{$v.Game.Name}}" };
+{{ end }}
+
+function showScreenshots(tmuuid) {
+  var screenshots = document.getElementById('screenshots-'+tmuuid).cloneNode(true);
+  screenshots.style.display='';
+  showModal({
+    title: 'Screenshots',
+    subtitle: teamNames[tmuuid].game-name,
+    bodyNode: screenshots,
+    buttons: [{
+      title: 'Done',
+      position: 'right',
+      click: hideModal
+    }]
+  });
+
+}
+
+function embiggenScreenshot(img) {
+  
+}
 
 function updateView() {
   updateButtonStates();
