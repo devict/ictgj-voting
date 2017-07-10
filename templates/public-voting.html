@@ -268,9 +268,11 @@ function getRanked() {
 function gameTableToArray(tbl) {
   var ret = [];
   var trs = snack.wrap('#'+tbl+'-table>tbody>tr')
-  if(trs[0].length > 0) {
+  if(trs.length > 0) {
     trs.each(function(ele, idx) {
-      ret = ret.concat(getTeamObj(ele.dataset.teamid));
+      if(ele.dataset != null && ele.dataset.teamid != null) {
+        ret = ret.concat(getTeamObj(ele.dataset.teamid));
+      }
     });
   }
   return ret;

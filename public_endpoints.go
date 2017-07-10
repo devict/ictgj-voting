@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -37,7 +36,6 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 	rand.Seed(time.Now().Unix())
 	for len(tms) > 0 {
 		i := rand.Intn(len(tms))
-		fmt.Println("Chose Team: " + tms[i].Name)
 		vpd.Teams = append(vpd.Teams, tms[i])
 		tms = append(tms[:i], tms[i+1:]...)
 	}

@@ -261,7 +261,6 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	if p.FlashClass == "" {
 		p.FlashClass = "hidden"
 	}
-	fmt.Println("Flash Message: " + p.FlashMessage + " (" + p.FlashClass + ")")
 
 	// Build the menu
 	if p.LoggedIn {
