@@ -136,6 +136,10 @@ img.thumbnail {
   margin-bottom: 5px;
 }
 
+.large {
+  font-size: 18px;
+}
+
 .big-space {
   margin: 10px;
 }
@@ -216,6 +220,22 @@ table tfoot {
   text-align: center;
 }
 
+div#embiggenedScreenShot {
+  cursor: pointer;
+  background-color: #FFF;
+}
+
+div.fullscreen {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  text-align: center;
+  margin: auto auto;
+  z-index:1001;
+}
+
 @media (min-width: 40em) {
   #menu {
     width: 150px;
@@ -244,7 +264,7 @@ table tfoot {
   }
 
   aside.flash {
-    margin-left: 150px;
+    font-size: 24px;
   }
 
   aside.flash.error {

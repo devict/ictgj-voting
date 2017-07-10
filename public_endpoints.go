@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -12,10 +14,10 @@ func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 }
 
 func handleMain(w http.ResponseWriter, req *http.Request) {
-	page := initPublicPage(w, req)
-	page.SubTitle = ""
 	switch dbGetPublicSiteMode() {
 	case SiteModeWaiting:
+		page := initPublicPage(w, req)
+		page.SubTitle = ""
 		page.show("public-waiting.html", w)
 	case SiteModeVoting:
 		loadVotingPage(w, req)
@@ -29,7 +31,17 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 		Timestamp string
 	}
 	vpd := new(votingPageData)
-	vpd.Teams = dbGetAllTeams()
+	tms := dbGetAllTeams()
+
+	// Randomize the team list
+	rand.Seed(time.Now().Unix())
+	for len(tms) > 0 {
+		i := rand.Intn(len(tms))
+		fmt.Println("Chose Team: " + tms[i].Name)
+		vpd.Teams = append(vpd.Teams, tms[i])
+		tms = append(tms[:i], tms[i+1:]...)
+	}
+
 	vpd.Timestamp = time.Now().Format(time.RFC3339)
 	page.TemplateData = vpd
 	page.show("public-voting.html", w)
@@ -60,5 +72,6 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	if newVote, err := dbGetVote(page.ClientId, timestamp); err == nil {
 		site.Votes = append(site.Votes, *newVote)
 	}
+	page.session.setFlashMessage("Vote Saved!", "success large fading")
 	redirect("/", w, req)
 }
