@@ -50,7 +50,7 @@
     </table>
   </div>
   <div class="content half">
-    <form action="/vote">
+    <form action="/vote" onsubmit="return validateVote();">
       <input id="uservote" type="hidden" name="uservote" value="" />
       <input id="timestamp" type="hidden" name="timestamp" value="{{.TemplateData.Timestamp}}" />
       <button class="pure-button pure-button-primary space-vertical pull-right" type="submit">Submit Vote!</button>
@@ -62,13 +62,14 @@
     <label class="control-label">Click to view original size</label>
     <div class="center-all horizontal-scroll thumbnail-container" id="thumbnail-container">
       {{ range $imgi, $imgv := $v.Game.Screenshots }}
-      <a href="javascript:embiggenScreenshot(this.getElementsByTagName('img')[0]);">
-        <img data-teamid="{{ $v.UUID }}" data-ssid="{{ $imgv.UUID }}" class="thumbnail" alt="{{ $imgv.Description }}" src="data:image/png;base64,{{ $imgv.Image }}" />
+      <a href="javascript:embiggenScreenshot('{{$imgv.UUID}}');">
+        <img id="{{ $imgv.UUID }}" data-teamid="{{ $v.UUID }}" data-ssid="{{ $imgv.UUID }}" class="thumbnail" alt="{{ $imgv.Description }}" src="data:image/png;base64,{{ $imgv.Image }}" />
       </a>
       {{ end }}
     </div>
   </div>
   {{ end }}
+  <div id="embiggenedScreenShot" class="hidden fullscreen" onclick="javascript:document.getElementById('embiggenedScreenShot').classList.add('hidden');"></div>
 {{ end }}
 <script>
 var teamNames = { };
@@ -89,11 +90,34 @@ function showScreenshots(tmuuid) {
       click: hideModal
     }]
   });
-
 }
 
 function embiggenScreenshot(img) {
-  
+  var ss = document.getElementById(img);
+  if(ss == null) {
+    // Couldn't find the screenshot... Error
+    setFlashMessage('Error viewing that screenshot, sorry...', ['error','fading']);
+    return;
+  }
+  var container = document.getElementById('embiggenedScreenShot');
+  var clone = ss.cloneNode(true);
+  clone.classList.remove('thumbnail');
+  while(container.hasChildNodes()) {
+    container.removeChild(container.firstChild);
+  }
+  var clickToCloseMsg = document.createElement('div');
+  clickToCloseMsg.innerText = "Click Image to Close";
+  container.appendChild(clickToCloseMsg);
+  container.appendChild(clone);
+  container.classList.remove('hidden');
+}
+
+function validateVote() {
+  var isValid = (getRanked().length > 0);
+  if(!isValid) {
+    setFlashMessage('You must choose at least one game.', ['error','fading']);
+  }
+  return (getRanked().length > 0);
 }
 
 function updateView() {
@@ -243,9 +267,12 @@ function getRanked() {
 // 'tbl' should be either 'ranked' or 'unranked'
 function gameTableToArray(tbl) {
   var ret = [];
-  snack.wrap('#'+tbl+'-table>tbody>tr').each(function(ele, idx) {
-    ret = ret.concat(getTeamObj(ele.dataset.teamid));
-  });
+  var trs = snack.wrap('#'+tbl+'-table>tbody>tr')
+  if(trs[0].length > 0) {
+    trs.each(function(ele, idx) {
+      ret = ret.concat(getTeamObj(ele.dataset.teamid));
+    });
+  }
   return ret;
 }
 

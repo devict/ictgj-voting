@@ -1,5 +1,12 @@
 function toggleAdminPanel() {
-  document.querySelector('#menu').classList.toggle('hidden');
+  var menu = document.querySelector('#menu');
+  if(menu.classList.contains('hidden')) {
+    document.querySelector('#layout>.content').style.marginLeft='150px';
+    menu.classList.remove('hidden');
+  } else {
+    document.querySelector('#layout>.content').style.marginLeft='0';
+    menu.classList.add('hidden');
+  }
 }
 
 
@@ -64,3 +71,35 @@ function hideModal() {
     buttonsDiv.removeChild(buttonsDiv.firstChild);
   }
 }
+
+function setFlashMessage(msg, cls) {
+  var flash = document.querySelector('aside.flash');
+  flash.innerText = msg;
+  for(var i = 0; i < cls.length; i++) {
+    flash.classList.add(cls[i]);
+  }
+  flash.classList.remove('hidden');
+  flash.style.opacity=1;
+  handleFlashMessage();
+}
+
+function handleFlashMessage() {
+  var flash = document.querySelector('aside.flash');
+  if(flash.classList.contains('fading')) {
+    setTimeout(fadeOutFlashMessage, 1000);
+  }
+}
+
+function fadeOutFlashMessage() {
+  var flash = document.querySelector('aside');
+  var opac = flash.style.opacity;
+  if(opac == "") { opac = 1; }
+  if(opac > 0) {
+    setTimeout(function() {
+      flash.style.opacity = opac - 0.01;
+      fadeOutFlashMessage();
+    }, 10);
+  }
+}
+
+handleFlashMessage();
