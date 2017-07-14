@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"image"
+	"image/gif"
+	"image/jpeg"
 	"net/http"
 	"strings"
 
-	"encoding/base64"
-
 	"github.com/gorilla/mux"
+	"github.com/nfnt/resize"
 )
 
 func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) {
@@ -65,10 +69,29 @@ func saveScreenshots(teamId string, req *http.Request) error {
 	if len(hdr.Filename) > extIdx {
 		fltp = hdr.Filename[extIdx+1:]
 	}
-	data, _ := ioutil.ReadAll(file)
-	str := base64.StdEncoding.EncodeToString(data)
+	m, _, err := image.Decode(file)
+	buf := new(bytes.Buffer)
+	// We convert everything to jpg
+	if err = jpeg.Encode(buf, m, nil); err != nil {
+		return errors.New("Unable to encode image")
+	}
+	thm := resize.Resize(200, 0, m, resize.Lanczos3)
+	thmBuf := new(bytes.Buffer)
+	var thmString string
+	if fltp == "gif" {
+		if err = gif.Encode(thmBuf, thm, nil); err != nil {
+			return errors.New("Unable to encode image")
+		}
+	} else {
+		if err = jpeg.Encode(thmBuf, thm, nil); err != nil {
+			return errors.New("Unable to encode image")
+		}
+	}
+	thmString = base64.StdEncoding.EncodeToString(thmBuf.Bytes())
+
 	return dbSaveTeamGameScreenshot(teamId, &Screenshot{
-		Image:    str,
-		Filetype: fltp,
+		Image:     base64.StdEncoding.EncodeToString(buf.Bytes()),
+		Thumbnail: thmString,
+		Filetype:  fltp,
 	})
 }

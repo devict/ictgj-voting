@@ -8,7 +8,7 @@
   <thead>
       <tr>
           <th>Name</th>
-          <th>Key</th>
+          <th>Management Link</th>
           <th>Members</th>
           <th>Game</th>
           <th></th>
@@ -18,7 +18,7 @@
       {{ range $i, $v := .TemplateData.Teams }} 
       <tr>
           <td>{{ $v.Name }}</td>
-          <td>{{ $v.UUID }}</td>
+          <td><a href="/team/{{ $v.UUID }}">{{ $v.UUID }}</a></td>
           <td>{{ len $v.Members }}</td>
           <td>{{ $v.Game.Name }}</td>
           <td>

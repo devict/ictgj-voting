@@ -108,3 +108,71 @@ func handleImageRequest(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Write(dat)
 }
+
+func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
+	if dbGetPublicSiteMode() == SiteModeVoting {
+		redirect("/", w, req)
+	}
+	page := initPublicPage(w, req)
+	vars := mux.Vars(req)
+	page.SubTitle = "Team Details"
+	teamId := vars["id"]
+	if teamId != "" {
+		// Team self-management functions
+		if !dbIsValidTeam(teamId) {
+			http.Error(w, "Page Not Found", 404)
+			return
+		}
+		switch vars["function"] {
+		case "":
+			page.SubTitle = "Team Management"
+			t := dbGetTeam(teamId)
+			page.TemplateData = t
+			page.show("public-teammgmt.html", w)
+		case "savemember":
+			mbrName := req.FormValue("newmembername")
+			mbrSlack := req.FormValue("newmemberslackid")
+			mbrTwitter := req.FormValue("newmembertwitter")
+			mbrEmail := req.FormValue("newmemberemail")
+			if err := dbAddTeamMember(teamId, mbrName, mbrEmail, mbrSlack, mbrTwitter); err != nil {
+				page.session.setFlashMessage("Error adding team member: "+err.Error(), "error")
+			} else {
+				page.session.setFlashMessage(mbrName+" added to team!", "success")
+			}
+			refreshTeamsInMemory()
+			redirect("/team/"+teamId, w, req)
+		case "deletemember":
+			mbrId := req.FormValue("memberid")
+			m, _ := dbGetTeamMember(teamId, mbrId)
+			if err := dbDeleteTeamMember(teamId, mbrId); err != nil {
+				page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
+			} else {
+				page.session.setFlashMessage(m.Name+" deleted from team", "success")
+			}
+			refreshTeamsInMemory()
+			redirect("/team/"+teamId, w, req)
+		case "savegame":
+			name := req.FormValue("gamename")
+			desc := req.FormValue("gamedesc")
+			if dbIsValidTeam(teamId) {
+				if err := dbUpdateTeamGame(teamId, name, desc); err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				} else {
+					page.session.setFlashMessage("Team game updated", "success")
+				}
+				redirect("/team/"+teamId, w, req)
+			}
+		case "screenshotupload":
+			if err := saveScreenshots(teamId, req); err != nil {
+				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+			}
+			redirect("/team/"+teamId, w, req)
+		case "screenshotdelete":
+			ssid := vars["subid"]
+			if err := dbDeleteTeamGameScreenshot(teamId, ssid); err != nil {
+				page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
+			}
+			redirect("/team/"+teamId, w, req)
+		}
+	}
+}

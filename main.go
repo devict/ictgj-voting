@@ -106,6 +106,9 @@ func main() {
 	pub.HandleFunc("/vote", handlePublicSaveVote)
 	pub.HandleFunc("/image/{teamid}/{imageid}", handleImageRequest)
 	pub.HandleFunc("/thumbnail/{teamid}/{imageid}", handleThumbnailRequest)
+	pub.HandleFunc("/team/{id}", handleTeamMgmtRequest)
+	pub.HandleFunc("/team/{id}/{function}", handleTeamMgmtRequest)
+	pub.HandleFunc("/team/{id}/{function}/{subid}", handleTeamMgmtRequest)
 
 	// API Subrouter
 	//api := r.PathPrefix("/api").Subtrouter()

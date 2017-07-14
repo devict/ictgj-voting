@@ -104,15 +104,16 @@ function embiggenScreenshot(img) {
     return;
   }
   var container = document.getElementById('embiggenedScreenShot');
-  var clone = ss.cloneNode(true);
-  clone.classList.remove('thumbnail');
   while(container.hasChildNodes()) {
     container.removeChild(container.firstChild);
   }
   var clickToCloseMsg = document.createElement('div');
   clickToCloseMsg.innerText = "Click Image to Close";
+  var oImg = document.createElement("img");
+  oImg.setAttribute('src', '/image/'+ss.dataset.teamid+'/'+ss.dataset.ssid);
+  oImg.setAttribute('alt', ss.getAttribute('alt'));
   container.appendChild(clickToCloseMsg);
-  container.appendChild(clone);
+  container.appendChild(oImg);
   container.classList.remove('hidden');
 }
 
