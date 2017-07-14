@@ -3,6 +3,10 @@ package main
 import (
 	"net/http"
 
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
 	"github.com/gorilla/mux"
 )
 

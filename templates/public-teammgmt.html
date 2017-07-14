@@ -1,27 +1,12 @@
 {{ $uuid := .TemplateData.UUID }}
 <div class="center">
   <div class="left">
-    <form class="pure-form pure-form-aligned" action="/admin/teams/{{ $uuid }}/save" method="POST">
-      <h3>Team Details</h3>
-      <fieldset>
-        <div class="left big-space">
-          <div class="pure-control-group">
-            <label class="control-label" for="teamname">Team Name</label>
-            <input id="teamname" name="teamname" value="{{ .TemplateData.Name }}" placeholder="Team Name">
-          </div>
-        </div>
-        <div class="pure-control-group reset-pull">
-          <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
-          <button type="submit" class="pull-right space pure-button pure-button-primary">Update Team</button>
-          <button type="button" id="btnDeleteTeam" class="pull-right space pure-button pure-button-error">Delete Team</button>
-        </div>
-      </fieldset>
-    </form>
+    <h3>{{.TemplateData.Name}}</h3>
     <hr />
   </div>
 
   <div class="left big-space">
-    <form class="pure-form pure-form-aligned" action="/admin/games/{{ $uuid }}/save" method="POST">
+    <form class="pure-form pure-form-aligned" action="/team/{{ $uuid }}/savegame" method="POST">
       <fieldset>
         <a name="game" />
         <h3>Team Game</h3>
@@ -34,7 +19,7 @@
           <textarea id="gamedesc" name="gamedesc" placeholder="Description...">{{ .TemplateData.Game.Description }}</textarea>
         </div>
         <div class="pure-control-group reset-pull">
-          <a href="/admin/teams/{{ $uuid }}" class="pull-left space pure-button pure-button-plain">Cancel</a>
+          <a href="/team/{{ $uuid }}" class="pull-left space pure-button pure-button-plain">Cancel</a>
           <button type="submit" class="pull-right space pure-button pure-button-primary">Update Game</button>
         </div>
       </fieldset>
@@ -79,7 +64,7 @@
           <td>{{ $v.Twitter }}</td>
           <td>{{ $v.Email }}</td>
           <td>
-            <form action="/admin/teams/{{ $uuid }}/deletemember" method="POST">
+            <form action="/team/{{ $uuid }}/deletemember" method="POST">
               <input type="hidden" name="memberid" value="{{ $v.UUID }}"/>
               <button type="submit" class="pure-button pure-button-error"><i class="fa fa-trash"></i></button>
             </form>
@@ -91,7 +76,7 @@
         </tr>
         <tr>
           <td colspan="6" class="padding">
-            <form class="pure-form" action="/admin/teams/{{ $uuid }}/savemember" method="POST">
+            <form class="pure-form" action="/team/{{ $uuid }}/savemember" method="POST">
               <div class="pure-control-group">
                 <input id="newmembername" name="newmembername" value="" placeholder="Member Name" autofocus />
                 <input id="newmemberslackid" name="newmemberslackid" value="" placeholder="@SlackID" />
@@ -106,12 +91,12 @@
     </table>
   </div>
   <div class="pure-control-group reset-pull">
-    <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
+    <a href="/team/{{ $uuid }}" class="pull-left space pure-button pure-button-plain">Cancel</a>
   </div>
 </div>
 <div id="uploadscreenshotform" style="display:none;">
   <h3>Upload Screenshot</h3>
-  <form class="pure-form pure-form-aligned" action="/admin/games/{{ $uuid }}/screenshotupload" method="POST" enctype="multipart/form-data">
+  <form class="pure-form pure-form-aligned" action="/team/{{ $uuid }}/screenshotupload" method="POST" enctype="multipart/form-data">
     <div class="pure-control-group" style="margin-bottom:50px;">
       <input class="file" type="file" name="newssfile" multiple>
     </div>
@@ -124,26 +109,6 @@
   </div>
 </div>
 <script>
-  snack.listener(
-    {node:document.getElementById('btnDeleteTeam'),event:'click'},
-    function() {
-      showModal({
-        title: 'Delete Team',
-        subtitle: '({{ .TemplateData.Name }})',
-        body: 'Are you sure? This cannot be undone.',
-        buttons: [{
-          title:'Cancel',
-          position:'left',
-          click: hideModal
-        },{
-          title:'Delete',
-          position:'right',
-          class: 'pure-button-error',
-          href: '/admin/teams/{{ $uuid }}/delete'
-        }]
-      });
-    }
-  );
   snack.listener(
     {
       node:document.getElementById('thumbnail-container'),
@@ -171,7 +136,7 @@
       buttons: [
         { title: 'Delete', class: 'pure-button-error', position: 'right',
           click: function() {
-            window.location = "/admin/games/{{ $uuid }}/screenshotdelete/"+img.dataset.ssid;
+            window.location = "/team/{{ $uuid }}/screenshotdelete/"+img.dataset.ssid;
           }
         },
         { title: 'Cancel', class: 'pure-button', position: 'right', click: hideModal }

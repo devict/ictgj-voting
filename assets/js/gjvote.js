@@ -73,7 +73,10 @@ function hideModal() {
 }
 
 function setFlashMessage(msg, cls) {
-  var flash = document.querySelector('aside.flash');
+  if( Object.prototype.toString.call( cls ) !== '[object Array]' ) {
+    cls = [ cls ];
+  }
+  var flash = document.querySelector('div.flash');
   flash.innerText = msg;
   for(var i = 0; i < cls.length; i++) {
     flash.classList.add(cls[i]);
@@ -84,14 +87,14 @@ function setFlashMessage(msg, cls) {
 }
 
 function handleFlashMessage() {
-  var flash = document.querySelector('aside.flash');
+  var flash = document.querySelector('div.flash');
   if(flash.classList.contains('fading')) {
     setTimeout(fadeOutFlashMessage, 1000);
   }
 }
 
 function fadeOutFlashMessage() {
-  var flash = document.querySelector('aside');
+  var flash = document.querySelector('div.flash');
   var opac = flash.style.opacity;
   if(opac == "") { opac = 1; }
   if(opac > 0) {

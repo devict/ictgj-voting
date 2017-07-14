@@ -1,12 +1,18 @@
 package main
 
 import (
-	"io/ioutil"
-	"net/http"
-
+	"bytes"
 	"encoding/base64"
+	"errors"
+	"fmt"
+	"image"
+	"image/gif"
+	"image/jpeg"
+	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/nfnt/resize"
 )
 
 func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) {
@@ -52,11 +58,40 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 }
 
 func saveScreenshots(teamId string, req *http.Request) error {
-	file, _, err := req.FormFile("newssfile")
+	var err error
+	file, hdr, err := req.FormFile("newssfile")
 	if err != nil {
 		return err
 	}
-	data, err := ioutil.ReadAll(file)
-	str := base64.StdEncoding.EncodeToString(data)
-	return dbSaveTeamGameScreenshot(teamId, &Screenshot{Image: str})
+	fmt.Println("File Received: " + hdr.Filename)
+	extIdx := strings.LastIndex(hdr.Filename, ".")
+	fltp := "png"
+	if len(hdr.Filename) > extIdx {
+		fltp = hdr.Filename[extIdx+1:]
+	}
+	m, _, err := image.Decode(file)
+	buf := new(bytes.Buffer)
+	// We convert everything to jpg
+	if err = jpeg.Encode(buf, m, nil); err != nil {
+		return errors.New("Unable to encode image")
+	}
+	thm := resize.Resize(200, 0, m, resize.Lanczos3)
+	thmBuf := new(bytes.Buffer)
+	var thmString string
+	if fltp == "gif" {
+		if err = gif.Encode(thmBuf, thm, nil); err != nil {
+			return errors.New("Unable to encode image")
+		}
+	} else {
+		if err = jpeg.Encode(thmBuf, thm, nil); err != nil {
+			return errors.New("Unable to encode image")
+		}
+	}
+	thmString = base64.StdEncoding.EncodeToString(thmBuf.Bytes())
+
+	return dbSaveTeamGameScreenshot(teamId, &Screenshot{
+		Image:     base64.StdEncoding.EncodeToString(buf.Bytes()),
+		Thumbnail: thmString,
+		Filetype:  fltp,
+	})
 }
