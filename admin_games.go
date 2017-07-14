@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"encoding/base64"
 
@@ -52,11 +54,21 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 }
 
 func saveScreenshots(teamId string, req *http.Request) error {
-	file, _, err := req.FormFile("newssfile")
+	var err error
+	file, hdr, err := req.FormFile("newssfile")
 	if err != nil {
 		return err
 	}
-	data, err := ioutil.ReadAll(file)
+	fmt.Println("File Received: " + hdr.Filename)
+	extIdx := strings.LastIndex(hdr.Filename, ".")
+	fltp := "png"
+	if len(hdr.Filename) > extIdx {
+		fltp = hdr.Filename[extIdx+1:]
+	}
+	data, _ := ioutil.ReadAll(file)
 	str := base64.StdEncoding.EncodeToString(data)
-	return dbSaveTeamGameScreenshot(teamId, &Screenshot{Image: str})
+	return dbSaveTeamGameScreenshot(teamId, &Screenshot{
+		Image:    str,
+		Filetype: fltp,
+	})
 }

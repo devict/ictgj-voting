@@ -63,7 +63,7 @@
     <div class="center-all horizontal-scroll thumbnail-container" id="thumbnail-container">
       {{ range $imgi, $imgv := $v.Game.Screenshots }}
       <a href="javascript:embiggenScreenshot('{{$imgv.UUID}}');">
-        <img id="{{ $imgv.UUID }}" data-teamid="{{ $v.UUID }}" data-ssid="{{ $imgv.UUID }}" class="thumbnail" alt="{{ $imgv.Description }}" src="data:image/png;base64,{{ $imgv.Image }}" />
+        <img id="{{ $imgv.UUID }}" data-teamid="{{ $v.UUID }}" data-ssid="{{ $imgv.UUID }}" class="thumbnail" alt="{{ $imgv.Description }}" src="data:image/{{$imgv.Filetype}};base64,{{ $imgv.Thumbnail }}" />
       </a>
       {{ end }}
     </div>
@@ -72,9 +72,13 @@
   <div id="embiggenedScreenShot" class="hidden fullscreen" onclick="javascript:document.getElementById('embiggenedScreenShot').classList.add('hidden');"></div>
 {{ end }}
 <script>
-var teamNames = { };
+var teams = { };
 {{ range $i, $v := .TemplateData.Teams }}
-teamNames[{{$v.UUID}}] = { "team-name": "{{$v.Name}}", "game-name": "{{$v.Game.Name}}" };
+teams[{{$v.UUID}}] = {
+  "team-name": "{{$v.Name}}",
+  "game-name": "{{$v.Game.Name}}",
+  "screenshots": [ {{ range $ssi, $ssv := $v.Game.Screenshots }} {{ $ssv.UUID }}, {{ end }} ]
+};
 {{ end }}
 
 function showScreenshots(tmuuid) {
@@ -82,7 +86,7 @@ function showScreenshots(tmuuid) {
   screenshots.style.display='';
   showModal({
     title: 'Screenshots',
-    subtitle: teamNames[tmuuid].game-name,
+    subtitle: teams[tmuuid].game-name,
     bodyNode: screenshots,
     buttons: [{
       title: 'Done',

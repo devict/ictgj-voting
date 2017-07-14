@@ -14,9 +14,11 @@ type Game struct {
 }
 
 type Screenshot struct {
+	UUID        string
 	Description string
 	Image       string
-	UUID        string
+	Thumbnail   string
+	Filetype    string
 }
 
 func dbUpdateTeamGame(teamId, name, desc string) error {
@@ -109,6 +111,15 @@ func dbGetTeamGameScreenshot(teamId, ssId string) *Screenshot {
 	if ret.Image, err = db.GetValue(ssPath, "image"); err != nil {
 		return nil
 	}
+	if ret.Thumbnail, err = db.GetValue(ssPath, "thumbnail"); err != nil {
+		return nil
+	}
+	if ret.Thumbnail == "" {
+		ret.Thumbnail = ret.Image
+	}
+	if ret.Filetype, err = db.GetValue(ssPath, "filetype"); err != nil {
+		return nil
+	}
 	return ret
 }
 
@@ -130,6 +141,12 @@ func dbSaveTeamGameScreenshot(teamId string, ss *Screenshot) error {
 		return err
 	}
 	if err := db.SetValue(ssPath, "image", ss.Image); err != nil {
+		return err
+	}
+	if err := db.SetValue(ssPath, "thumbnail", ss.Thumbnail); err != nil {
+		return err
+	}
+	if err := db.SetValue(ssPath, "filetype", ss.Filetype); err != nil {
 		return err
 	}
 	return nil

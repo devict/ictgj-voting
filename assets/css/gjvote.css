@@ -263,16 +263,19 @@ div.fullscreen {
     margin-left: 150px;
   }
 
-  aside.flash {
+  div.flash {
     font-size: 24px;
+    position: fixed;
+    top: 0px;
+    width: 100%;
   }
 
-  aside.flash.error {
+  div.flash.error {
     background-color: #DD0000;
     color: #FFFFFF;
   }
 
-  aside.flash.success {
+  div.flash.success {
     background-color: #229af9;
     color: #FFFFFF;
   }

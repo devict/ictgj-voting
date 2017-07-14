@@ -104,6 +104,8 @@ func main() {
 	pub := r.PathPrefix("/").Subrouter()
 	pub.HandleFunc("/", handleMain)
 	pub.HandleFunc("/vote", handlePublicSaveVote)
+	pub.HandleFunc("/image/{teamid}/{imageid}", handleImageRequest)
+	pub.HandleFunc("/thumbnail/{teamid}/{imageid}", handleThumbnailRequest)
 
 	// API Subrouter
 	//api := r.PathPrefix("/api").Subtrouter()
@@ -297,7 +299,6 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 func (p *pageData) show(tmplName string, w http.ResponseWriter) error {
 	for _, tmpl := range []string{
 		"htmlheader.html",
-		"admin-menu.html",
 		"header.html",
 		tmplName,
 		"footer.html",

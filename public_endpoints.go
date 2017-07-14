@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/base64"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
@@ -72,4 +75,36 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	}
 	page.session.setFlashMessage("Vote Saved!", "success large fading")
 	redirect("/", w, req)
+}
+
+func handleThumbnailRequest(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	ss := dbGetTeamGameScreenshot(vars["teamid"], vars["imageid"])
+	if ss == nil {
+		http.Error(w, "Couldn't find image", 404)
+		return
+	}
+	w.Header().Set("Content-Type", "image/"+ss.Filetype)
+	dat, err := base64.StdEncoding.DecodeString(ss.Thumbnail)
+	if err != nil {
+		http.Error(w, "Couldn't find image", 404)
+		return
+	}
+	w.Write(dat)
+}
+
+func handleImageRequest(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	ss := dbGetTeamGameScreenshot(vars["teamid"], vars["imageid"])
+	if ss == nil {
+		http.Error(w, "Couldn't find image", 404)
+		return
+	}
+	w.Header().Set("Content-Type", "image/"+ss.Filetype)
+	dat, err := base64.StdEncoding.DecodeString(ss.Image)
+	if err != nil {
+		http.Error(w, "Couldn't find image", 404)
+		return
+	}
+	w.Write(dat)
 }

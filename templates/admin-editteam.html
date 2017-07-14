@@ -40,7 +40,7 @@
             <a style="margin-top:40px;" class="center-all pure-button pure-button-primary" href="javascript:toggleUploadSSForm();">Upload Screenshot</a>
           {{ else }}
             {{ range $i, $v := .TemplateData.Game.Screenshots }}
-            <img data-teamid="{{ $uuid }}" data-ssid="{{ $v.UUID }}" class="thumbnail" alt="{{ $v.Description }}" src="data:image/png;base64,{{ $v.Image }}" />
+            <img data-teamid="{{ $uuid }}" data-ssid="{{ $v.UUID }}" class="thumbnail" alt="{{ $v.Description }}" src="data:image/{{$v.Filetype}};base64,{{ $v.Thumbnail }}" />
             {{ end }}
           {{ end }}
           </div>
