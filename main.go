@@ -66,7 +66,7 @@ type pageData struct {
 	ClientId       string
 	ClientIsAuth   bool
 	ClientIsServer bool
-	TeamID         string
+	AuthMode       int
 
 	PublicMode   int
 	TemplateData interface{}
@@ -290,11 +290,11 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	p.ClientId = p.session.getClientId()
 	p.ClientIsAuth = clientIsAuthenticated(p.ClientId, req)
 	p.ClientIsServer = clientIsServer(req)
-	// TeamID is for team self-administration
-	p.TeamID, _ = p.session.getStringValue("teamid")
 
 	// Public Mode
 	p.PublicMode = dbGetPublicSiteMode()
+	// Authentication Mode
+	p.AuthMode = dbGetAuthMode()
 
 	return p
 }
@@ -318,7 +318,6 @@ func (p *pageData) show(tmplName string, w http.ResponseWriter) error {
 // outputTemplate
 // Spit out a template
 func outputTemplate(tmplName string, tmplData interface{}, w http.ResponseWriter) error {
-	// TODO: Use embedded files for these... Hopefully?
 	n := "/templates/" + tmplName
 	l := template.Must(template.New("layout").Parse(FSMustString(site.DevMode, n)))
 	t := template.Must(l.Parse(FSMustString(site.DevMode, n)))

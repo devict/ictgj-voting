@@ -16,12 +16,13 @@ func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 }
 
 func handleMain(w http.ResponseWriter, req *http.Request) {
-	switch dbGetPublicSiteMode() {
-	case SiteModeWaiting:
-		page := initPublicPage(w, req)
+	page := initPublicPage(w, req)
+	showWaiting := (dbGetAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth
+	showWaiting = showWaiting && (dbGetPublicSiteMode() == SiteModeWaiting)
+	if showWaiting {
 		page.SubTitle = ""
 		page.show("public-waiting.html", w)
-	case SiteModeVoting:
+	} else {
 		loadVotingPage(w, req)
 	}
 }
@@ -153,9 +154,10 @@ func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 			redirect("/team/"+teamId, w, req)
 		case "savegame":
 			name := req.FormValue("gamename")
+			link := req.FormValue("gamelink")
 			desc := req.FormValue("gamedesc")
 			if dbIsValidTeam(teamId) {
-				if err := dbUpdateTeamGame(teamId, name, desc); err != nil {
+				if err := dbUpdateTeamGame(teamId, name, link, desc); err != nil {
 					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("Team game updated", "success")

@@ -9,6 +9,7 @@ import (
 type Game struct {
 	Name        string
 	TeamId      string
+	Link        string
 	Description string
 	Screenshots []Screenshot
 }
@@ -21,7 +22,7 @@ type Screenshot struct {
 	Filetype    string
 }
 
-func dbUpdateTeamGame(teamId, name, desc string) error {
+func dbUpdateTeamGame(teamId, name, link, desc string) error {
 	var err error
 	if err = openDatabase(); err != nil {
 		return err
@@ -42,6 +43,9 @@ func dbUpdateTeamGame(teamId, name, desc string) error {
 		name = tm.Name + "'s Game"
 	}
 	if err := db.SetValue(gamePath, "name", name); err != nil {
+		return err
+	}
+	if err := db.SetValue(gamePath, "link", link); err != nil {
 		return err
 	}
 	if err := db.SetValue(gamePath, "description", desc); err != nil {
@@ -78,6 +82,9 @@ func dbGetTeamGame(teamId string) *Game {
 	gm.TeamId = teamId
 	if gm.Description, err = db.GetValue(gamePath, "description"); err != nil {
 		gm.Description = ""
+	}
+	if gm.Link, err = db.GetValue(gamePath, "link"); err != nil {
+		gm.Link = ""
 	}
 	gm.Screenshots = dbGetTeamGameScreenshots(teamId)
 	return gm

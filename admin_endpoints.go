@@ -45,6 +45,8 @@ func handleAdmin(w http.ResponseWriter, req *http.Request) {
 			handleAdminVotes(w, req, page)
 		case "mode":
 			handleAdminSetMode(w, req, page)
+		case "authmode":
+			handleAdminSetAuthMode(w, req, page)
 		default:
 			page.TemplateData = getCondorcetResult()
 			page.show("admin-main.html", w)
@@ -60,6 +62,18 @@ func handleAdminSetMode(w http.ResponseWriter, req *http.Request, page *pageData
 	}
 	if dbSetPublicSiteMode(newMode) != nil {
 		page.session.setFlashMessage("Invalid Mode: "+vars["id"], "error")
+	}
+	redirect("/admin", w, req)
+}
+
+func handleAdminSetAuthMode(w http.ResponseWriter, req *http.Request, page *pageData) {
+	vars := mux.Vars(req)
+	newMode, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		page.session.setFlashMessage("Invalid Authentication Mode: "+vars["id"], "error")
+	}
+	if dbSetAuthMode(newMode) != nil {
+		page.session.setFlashMessage("Invalid Authentication Mode: "+vars["id"], "error")
 	}
 	redirect("/admin", w, req)
 }

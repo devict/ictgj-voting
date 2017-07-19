@@ -15,6 +15,10 @@
           <input id="gamename" name="gamename" value="{{ .TemplateData.Game.Name }}" placeholder="Game Name">
         </div>
         <div class="pure-control-group">
+          <label class="control-label" for="gamelink">Game Website</label>
+          <input id="gamelink" name="gamelink" value="{{ .TemplateData.Game.Link }}" placeholder="Game Link">
+        </div>
+        <div class="pure-control-group">
           <label class="control-label" for="gamedesc">Description</label>
           <textarea id="gamedesc" name="gamedesc" placeholder="Description...">{{ .TemplateData.Game.Description }}</textarea>
         </div>

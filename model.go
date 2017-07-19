@@ -16,6 +16,12 @@ const (
 	SiteModeError
 )
 
+const (
+	AuthModeAuthentication = iota
+	AuthModeAll
+	AuthModeError
+)
+
 func GetDefaultSiteConfig() *siteData {
 	ret := new(siteData)
 	ret.Title = "ICT GameJam"
@@ -142,6 +148,21 @@ func dbSaveSiteConfig(dat *siteData) error {
 		return err
 	}
 	return db.SetValue(siteConf, "server-dir", dat.ServerDir)
+}
+
+func dbGetAuthMode() int {
+	if ret, err := db.GetInt([]string{"site"}, "auth-mode"); err != nil {
+		return AuthModeAuthentication
+	} else {
+		return ret
+	}
+}
+
+func dbSetAuthMode(mode int) error {
+	if mode < 0 || mode >= AuthModeError {
+		return errors.New("Invalid site mode")
+	}
+	return db.SetInt([]string{"site"}, "auth-mode", mode)
 }
 
 func dbGetPublicSiteMode() int {

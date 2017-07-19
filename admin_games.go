@@ -34,8 +34,9 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 		case "save":
 			name := req.FormValue("gamename")
 			desc := req.FormValue("gamedesc")
+			link := req.FormValue("gamelink")
 			if dbIsValidTeam(teamId) {
-				if err := dbUpdateTeamGame(teamId, name, desc); err != nil {
+				if err := dbUpdateTeamGame(teamId, name, link, desc); err != nil {
 					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("Team game updated", "success")
