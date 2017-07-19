@@ -189,7 +189,7 @@ table tfoot {
 .pure-button-toggle-last {
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
-  margin-left: -1px;
+  margin-left: -5px;
   border-left: 1px solid #CCC;
 }
 

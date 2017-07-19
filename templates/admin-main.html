@@ -4,6 +4,13 @@
     <button onclick="window.location.href='/admin/mode/0'" class="pure-button-toggle-first pure-button {{ if eq .PublicMode 0 }}pure-button-primary{{ end }}">Waiting</button>
     <button onclick="window.location.href='/admin/mode/1'" class="pure-button-toggle-last pure-button {{ if eq .PublicMode 1 }}pure-button-primary{{ end }}">Voting</button>
   </div>
+  <!--
+  <div>
+    <h3>Allowed Voting Terminals</h3>
+    <button onclick="window.location.href='/admin/authmode/0'" class="pure-button-toggle-first pure-button {{ if eq .AuthMode 0 }}pure-button-primary{{ end }}">Only Authenticated Clients</button>
+    <button onclick="window.location.href='/admin/authmode/1'" class="pure-button-toggle-last pure-button {{ if eq .AuthMode 1 }}pure-button-primary{{ end }}">Any Client Can Vote</button>
+  </div>
+  -->
   {{ if eq .PublicMode 1 }}
   <div>
     <h3>Current Results</h3>

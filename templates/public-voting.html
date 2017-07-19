@@ -1,6 +1,6 @@
 {{ if not .TemplateData.Teams }}
   <div>No games have been created</div>
-  {{ else }}
+{{ else }}
   <div class="content">
   Rank one or more games from your favorite to least favorite.
   </div>
@@ -70,7 +70,6 @@
   </div>
   {{ end }}
   <div id="embiggenedScreenShot" class="hidden fullscreen" onclick="javascript:document.getElementById('embiggenedScreenShot').classList.add('hidden');"></div>
-{{ end }}
 <script>
 var teams = { };
 {{ range $i, $v := .TemplateData.Teams }}
@@ -369,3 +368,4 @@ function createUnrankedActionsTd(tmUUID) {
   return td;
 }
 </script>
+{{ end }}
