@@ -12040,7 +12040,7 @@ Xo6z3V9nVvnKh0MZ+h0AAP//kX1qvCYDAAA=
 	"/templates/admin-main.html": {
 		local:   "templates/admin-main.html",
 		size:    1476,
-		modtime: 1500477139,
+		modtime: 1500477228,
 		compressed: `
 H4sIAAAJbogA/6xTTQ/aMAy971d4FRKXtQHtNrWVEJN22oc2tp1Da0q0NGFJWoQQ/30OAVTxMVDhgpPY
 fjy/56alaKGQ3NosKrRyqFyUvwHw7z7Safk+/9bMpSjgsy4xZXQPiXnjnFagVUHJP1m0FqrU60Tqgjuh
