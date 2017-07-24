@@ -14,7 +14,7 @@ Command Line Arguments
 
 Configuration arguments  
 Passing a configuration argument will save the value to the database for future use  
-```bash
+```
   -title=<title>          Set the title for the site  
   -port=<port>            The port to run the site on  
   -session-name=<name>    A name to use for the session  
@@ -25,7 +25,7 @@ Passing a configuration argument will save the value to the database for future 
 
 Runtime Arguments  
 These arguments only affect the current run of the application  
-```bash
+```
   -help                   Display the application help, breakdown of arguments  
   -dev                    Run in development mode, load assets (templates/js/css) from file system  
                           rather than the binary  
@@ -43,7 +43,7 @@ Prebuilt Binaries
 
 Building
 ----
-```bash
+```
 go get github.com/devict/ictgj-voting
 ```
 
