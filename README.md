@@ -43,7 +43,7 @@ Prebuilt Binaries
 
 Building
 ----
-```
+```none
 go get github.com/devict/ictgj-voting
 ```
 
