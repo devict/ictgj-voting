@@ -41,19 +41,19 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 				} else {
 					page.session.setFlashMessage("Team game updated", "success")
 				}
-				redirect("/admin/teams/"+teamId, w, req)
+				redirect("/admin/teams/"+teamId+"#game", w, req)
 			}
 		case "screenshotupload":
 			if err := saveScreenshots(teamId, req); err != nil {
 				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
 			}
-			redirect("/admin/teams/"+teamId, w, req)
+			redirect("/admin/teams/"+teamId+"#game", w, req)
 		case "screenshotdelete":
 			ssid := vars["subid"]
 			if err := dbDeleteTeamGameScreenshot(teamId, ssid); err != nil {
 				page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
 			}
-			redirect("/admin/teams/"+teamId, w, req)
+			redirect("/admin/teams/"+teamId+"#game", w, req)
 		}
 	}
 }
