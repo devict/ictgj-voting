@@ -198,7 +198,7 @@
         }]
       });
     } else {
-      var uploadForm = document.getElementById('uploadscreenshotform');
+      var uploadForm = document.getElementById('uploadscreenshotform').cloneNode(true);
       showModal({
         title: 'Upload Screenshot',
         subtitle: '({{ .TemplateData.Name }})',
