@@ -75,7 +75,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 					page.session.setFlashMessage(mbrName+" added to team!", "success")
 				}
 				refreshTeamsInMemory()
-				redirect("/admin/teams/"+teamId, w, req)
+				redirect("/admin/teams/"+teamId+"#members", w, req)
 			case "deletemember":
 				mbrId := req.FormValue("memberid")
 				m, _ := dbGetTeamMember(teamId, mbrId)
@@ -85,7 +85,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 					page.session.setFlashMessage(m.Name+" deleted from team", "success")
 				}
 				refreshTeamsInMemory()
-				redirect("/admin/teams/"+teamId, w, req)
+				redirect("/admin/teams/"+teamId+"#members", w, req)
 			default:
 				page.SubTitle = "Edit Team"
 				t := dbGetTeam(teamId)

@@ -1,6 +1,12 @@
 {{ $uuid := .TemplateData.UUID }}
 <div class="center">
-  <div class="left">
+  <div>
+    <h3>Team Management</h3>
+    <button id="edit-team-button" onclick="javascript:gotoTeamTab();" class="pure-button-toggle-first pure-button pure-button-primary">Team Details</button>
+    <button id="edit-game-button" onclick="javascript:gotoTeamGameTab();" class="pure-button-toggle-middle pure-button">Game Details</button>
+    <button id="edit-team-members-button" onclick="javascript:gotoTeamMemberTab();" class="pure-button-toggle-last pure-button">Team Members</button>
+  </div>
+  <div id="edit-team-tab" class="left">
     <form class="pure-form pure-form-aligned" action="/admin/teams/{{ $uuid }}/save" method="POST">
       <h3>Team Details</h3>
       <fieldset>
@@ -17,10 +23,9 @@
         </div>
       </fieldset>
     </form>
-    <hr />
   </div>
 
-  <div class="left big-space">
+  <div id="edit-game-tab" class="left big-space hidden">
     <form class="pure-form pure-form-aligned" action="/admin/games/{{ $uuid }}/save" method="POST">
       <fieldset>
         <a name="game" />
@@ -62,8 +67,7 @@
     </div>
   </div>
 
-  <hr />
-  <div class="left">
+  <div id="edit-team-members-tab" class="left hidden">
     <h3>Team Members</h3>
     <table class="center padding hide">
       <thead>
@@ -108,9 +112,6 @@
         </tr>
       </tbody>
     </table>
-  </div>
-  <div class="pure-control-group reset-pull">
-    <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
   </div>
 </div>
 <div id="uploadscreenshotform" style="display:none;">
@@ -162,16 +163,9 @@
   );
 
   function showEditScreenShotModal(img) {
-    var newImg = img.cloneNode();
-    var editSSForm = document.getElementById('editscreenshotform');
-    var cont = document.getElementById('editss-container');
-    while(cont.hasChildNodes()) {
-      cont.removeChild(cont.lastChild);
-    }
-    cont.appendChild(newImg);
     showModal({
       title: 'Edit Screenshot',
-      bodyNode: editSSForm,
+      bodyNode: img.cloneNode(true),
       buttons: [
         { title: 'Delete', class: 'pure-button-error', position: 'right',
           click: function() {
@@ -181,18 +175,162 @@
         { title: 'Cancel', class: 'pure-button', position: 'right', click: hideModal }
       ]
     });
-    editSSForm.style.display="block";
-    editSSForm.style.height="200px";
   }
 
   function toggleUploadSSForm() {
-    var uploadForm = document.getElementById('uploadscreenshotform');
-    showModal({
-      title: 'Upload Screenshot',
-      subtitle: '({{ .TemplateData.Name }})',
-      bodyNode: uploadForm
-    });
-    uploadForm.style.display="block";
-    document.getElementById('modal-body').style.height='165px';
+    if(valuesChanged()) {
+      showModal({
+        title: 'Unsaved Changes',
+        subtitle: '',
+        body: "You've made some changes, but haven't saved them yet, if you continue they will be lost.",
+        buttons: [{
+          title: 'Cancel Changes',
+          class: 'pure-button-error',
+          click: function() {
+            revertChanges();
+            toggleUploadSSForm();
+            hideModal();
+          }
+        },{
+          title: 'Go Back',
+          class: 'pure-button-primary',
+          click: hideModal
+        }]
+      });
+    } else {
+      var uploadForm = document.getElementById('uploadscreenshotform');
+      showModal({
+        title: 'Upload Screenshot',
+        subtitle: '({{ .TemplateData.Name }})',
+        bodyNode: uploadForm
+      });
+      uploadForm.style.display="block";
+      document.getElementById('modal-body').style.height='165px';
+    }
+  }
+
+  function valuesChanged() {
+    // Check if Team Name changed
+    if(document.getElementById('teamname').value != '{{ .TemplateData.Name }}') { return true; }
+    // Check if Game Details changed
+    if(document.getElementById('gamename').value != '{{ .TemplateData.Game.Name }}') { return true; }
+    if(document.getElementById('gamelink').value != '{{ .TemplateData.Game.Link }}') { return true; }
+    if(document.getElementById('gamedesc').value != '{{ .TemplateData.Game.Description }}') { return true; }
+    // Check if new member details have been entered
+    if(document.getElementById('newmembername').value != '') { return true; }
+    if(document.getElementById('newmemberslackid').value != '') { return true; }
+    if(document.getElementById('newmembertwitter').value != '') { return true; }
+    if(document.getElementById('newmemberemail').value != '') { return true; }
+    return false;
+  }
+
+  function revertChanges() {
+    // Reset Team Name
+    document.getElementById('teamname').value = '{{ .TemplateData.Name }}';
+    // Reset Game Details
+    document.getElementById('gamename').value = '{{ .TemplateData.Game.Name }}';
+    document.getElementById('gamelink').value = '{{ .TemplateData.Game.Link }}';
+    document.getElementById('gamedesc').value = '{{ .TemplateData.Game.Description }}';
+    // Reset new member fields
+    document.getElementById('newmembername').value = '';
+    document.getElementById('newmemberslackid').value = '';
+    document.getElementById('newmembertwitter').value = '';
+    document.getElementById('newmemberemail').value = '';
+  }
+
+  function gotoTeamTab() {
+    if(valuesChanged()) {
+      showModal({
+        title: 'Unsaved Changes',
+        subtitle: '',
+        body: "You've made some changes, but haven't saved them yet, if you continue they will be lost.",
+        buttons: [{
+          title: 'Cancel Changes',
+          class: 'pure-button-error',
+          click: function() {
+            revertChanges();
+            gotoTeamTab();
+            hideModal();
+          }
+        },{
+          title: 'Go Back',
+          class: 'pure-button-primary',
+          click: hideModal
+        }]
+      });
+    } else {
+      document.getElementById('edit-team-button').classList.add('pure-button-primary');
+      document.getElementById('edit-game-button').classList.remove('pure-button-primary');
+      document.getElementById('edit-team-members-button').classList.remove('pure-button-primary');
+      document.getElementById('edit-team-tab').classList.remove('hidden');
+      document.getElementById('edit-game-tab').classList.add('hidden');
+      document.getElementById('edit-team-members-tab').classList.add('hidden');
+    }
+  }
+
+  function gotoTeamGameTab() {
+    if(valuesChanged()) {
+      showModal({
+        title: 'Unsaved Changes',
+        subtitle: '',
+        body: "You've made some changes, but haven't saved them yet, if you continue they will be lost.",
+        buttons: [{
+          title: 'Cancel Changes',
+          class: 'pure-button-error',
+          click: function() {
+            revertChanges();
+            gotoTeamGameTab();
+            hideModal();
+          }
+        },{
+          title: 'Go Back',
+          class: 'pure-button-primary',
+          click: hideModal
+        }]
+      });
+    } else {
+      document.getElementById('edit-team-button').classList.remove('pure-button-primary');
+      document.getElementById('edit-game-button').classList.add('pure-button-primary');
+      document.getElementById('edit-team-members-button').classList.remove('pure-button-primary');
+      document.getElementById('edit-team-tab').classList.add('hidden');
+      document.getElementById('edit-game-tab').classList.remove('hidden');
+      document.getElementById('edit-team-members-tab').classList.add('hidden');
+    }
+  }
+
+  function gotoTeamMemberTab() {
+    if(valuesChanged()) {
+      showModal({
+        title: 'Unsaved Changes',
+        subtitle: '',
+        body: "You've made some changes, but haven't saved them yet, if you continue they will be lost.",
+        buttons: [{
+          title: 'Cancel Changes',
+          class: 'pure-button-error',
+          click: function() {
+            revertChanges();
+            gotoTeamMemberTab();
+            hideModal();
+          }
+        },{
+          title: 'Go Back',
+          class: 'pure-button-primary',
+          click: hideModal
+        }]
+      });
+    } else {
+      document.getElementById('edit-team-button').classList.remove('pure-button-primary');
+      document.getElementById('edit-game-button').classList.remove('pure-button-primary');
+      document.getElementById('edit-team-members-button').classList.add('pure-button-primary');
+      document.getElementById('edit-team-tab').classList.add('hidden');
+      document.getElementById('edit-game-tab').classList.add('hidden');
+      document.getElementById('edit-team-members-tab').classList.remove('hidden');
+    }
+  }
+
+  if(window.location.hash == '#game') {
+    gotoTeamGameTab();
+  } else if(window.location.hash == '#members') {
+    gotoTeamMemberTab();
   }
 </script>

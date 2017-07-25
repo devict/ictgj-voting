@@ -141,7 +141,7 @@ func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 				page.session.setFlashMessage(mbrName+" added to team!", "success")
 			}
 			refreshTeamsInMemory()
-			redirect("/team/"+teamId, w, req)
+			redirect("/team/"+teamId+"#members", w, req)
 		case "deletemember":
 			mbrId := req.FormValue("memberid")
 			m, _ := dbGetTeamMember(teamId, mbrId)

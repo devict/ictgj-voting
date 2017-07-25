@@ -183,7 +183,7 @@ table tfoot {
 }
 .pure-button-toggle-middle {
   border-radius: 0px;
-  margin-left: -1px;
+  margin-left: -5px;
   border-left: 1px solid #CCC;
 }
 .pure-button-toggle-last {
@@ -196,6 +196,10 @@ table tfoot {
 .pure-button:disabled {
   background-color: #CCC;
   color: #999;
+}
+
+#modal-body {
+  margin-bottom: 15px;
 }
 
 #modal-overlay {
