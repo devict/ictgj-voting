@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,8 @@ func dbGetClientVotes(clientId string) []Vote {
 			var vt *Vote
 			if vt, err = dbGetVote(clientId, tm); err == nil {
 				ret = append(ret, *vt)
+			} else {
+				fmt.Println(err)
 			}
 		}
 	}

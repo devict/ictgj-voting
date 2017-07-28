@@ -12,13 +12,13 @@
   </div>
   -->
   {{ if eq .PublicMode 1 }}
-  <div>
-    <h3>Current Results</h3>
-    <ol>
-    {{ range $i, $v := .TemplateData }}
-      <li>{{ $v.Name }}</li>
+  <div class="results-container">
+  <h2>Current Results</h2>
+  {{ range $i, $v := .TemplateData }}
+    {{ range $ti, $tv := $v.Teams }}
+      {{ $v.Rank }}: {{ $tv.Name }}<br />
     {{ end }}
-    </ol>
+  {{ end }}
   </div>
   {{ end }}
   <div>

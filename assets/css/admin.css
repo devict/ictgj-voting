@@ -9,3 +9,12 @@ div.bottom-space {
 img.thumbnail {
   cursor: pointer;
 }
+
+div.results-container {
+  border: 1px solid #999;
+  border-radius: 3px;
+  background-color: #DDD;
+  margin-bottom: 20px;
+  padding-left: 20px;
+  padding-bottom: 20px;
+}

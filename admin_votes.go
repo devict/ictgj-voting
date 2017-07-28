@@ -2,28 +2,34 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 )
 
+type Ranking struct {
+	Rank  int
+	Teams []Team
+}
+
 // getCondorcetResult returns the ranking of teams based on the condorcet method
 // https://en.wikipedia.org/wiki/Condorcet_method
-func getCondorcetResult() []Team {
+func getCondorcetResult() []Ranking {
 	type teamPair struct {
 		winner   *Team
 		loser    *Team
 		majority float32
 	}
 	var allPairs []teamPair
-	var ret []Team
+	var ret []Ranking
 	for i := 0; i < len(site.Teams); i++ {
 		for j := i + 1; j < len(site.Teams); j++ {
 			// For each pairing find a winner
 			winner, pct, _ := findWinnerBetweenTeams(&site.Teams[i], &site.Teams[j])
+			newPair := new(teamPair)
 			if winner != nil {
-				newPair := new(teamPair)
 				newPair.winner = winner
 				if winner.UUID == site.Teams[i].UUID {
 					newPair.loser = &site.Teams[j]
@@ -31,49 +37,60 @@ func getCondorcetResult() []Team {
 					newPair.loser = &site.Teams[i]
 				}
 				newPair.majority = pct
-				allPairs = append(allPairs, *newPair)
+			} else {
+				newPair.winner = &site.Teams[i]
+				newPair.loser = &site.Teams[j]
+				newPair.majority = 50
 			}
+			allPairs = append(allPairs, *newPair)
 		}
 	}
+	// initialize map of team wins
 	teamWins := make(map[string]int)
 	for i := range site.Teams {
 		teamWins[site.Teams[i].UUID] = 0
 	}
+	// Figure out how many wins each team has
 	for i := range allPairs {
-		teamWins[allPairs[i].winner.UUID]++
+		if allPairs[i].majority != 50 {
+			teamWins[allPairs[i].winner.UUID]++
+		}
 	}
-	for len(teamWins) > 0 { //len(ret) <= len(site.Teams) {
+	fmt.Println(teamWins)
+
+	// Rank them by wins
+	rankedWins := make(map[int][]string)
+	for k, v := range teamWins {
+		rankedWins[v] = append(rankedWins[v], k)
+	}
+	fmt.Println(rankedWins)
+	currRank := 1
+	for len(rankedWins) > 0 {
 		topWins := 0
-		var topTeam string
-		for k, v := range teamWins {
-			// If this team is already in ret, carry on
-			if uuidIsInTeamSlice(k, ret) {
-				continue
-			}
-			// If this is the last key in teamWins, just add it
-			if len(teamWins) == 1 || v > topWins {
-				topWins = v
-				topTeam = k
+		for k, _ := range rankedWins {
+			if k > topWins {
+				topWins = k
 			}
 		}
-		// Remove topTeam from map
-		delete(teamWins, topTeam)
-		// Now add topTeam to ret
-		addTeam := site.getTeamByUUID(topTeam)
-		if addTeam != nil {
-			ret = append(ret, *addTeam)
-		} else {
-			break
+		nR := new(Ranking)
+		nR.Rank = currRank
+		for i := range rankedWins[topWins] {
+			nR.Teams = append(nR.Teams, *site.getTeamByUUID(rankedWins[topWins][i]))
 		}
+		ret = append(ret, *nR)
+		delete(rankedWins, topWins)
+		currRank++
 	}
 	return ret
 }
 
 // This is a helper function for calculating results
-func uuidIsInTeamSlice(uuid string, sl []Team) bool {
+func uuidIsInRankingSlice(uuid string, sl []Ranking) bool {
 	for _, v := range sl {
-		if v.UUID == uuid {
-			return true
+		for i := range v.Teams {
+			if v.Teams[i].UUID == uuid {
+				return true
+			}
 		}
 	}
 	return false
@@ -121,7 +138,7 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 	}
 	type votePageData struct {
 		AllVotes []vpdVote
-		Results  []Team
+		Results  []Ranking
 	}
 	vpd := new(votePageData)
 	for i := range site.Votes {

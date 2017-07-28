@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/gorilla/sessions"
@@ -35,9 +36,24 @@ func (p *pageSession) getClientId() string {
 	var clientId string
 	var err error
 	if clientId, err = p.getStringValue("client_id"); err != nil {
-		// No client id, generate and save one
-		clientId := uuid.New()
-		p.setStringValue("client_id", clientId)
+		// No client id in session, check if we have one for this ip in the db
+		fmt.Println("Looking for Client Data")
+		clientIp, _, _ := net.SplitHostPort(p.req.RemoteAddr)
+		var cli *Client
+		fmt.Println("  Client IP:" + clientIp)
+		if clientIp != "127.0.0.1" {
+			fmt.Println("  Pulling data by IP")
+			cli = dbGetClientByIp(clientIp)
+		}
+		if cli != nil {
+			clientId = cli.UUID
+			p.setStringValue("client_id", clientId)
+		} else {
+			// No client id, generate and save one
+			fmt.Println("  Generating a new Client ID")
+			clientId = uuid.New()
+			p.setStringValue("client_id", clientId)
+		}
 	}
 	return clientId
 }
