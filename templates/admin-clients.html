@@ -1,21 +1,29 @@
-<div>The hosting server is always an authenticated client</div>
 {{ if not .TemplateData.Clients }}
-<div>No additional clients have been authenticated</div>
+<div class="space-vertical">No additional clients have been authenticated</div>
 {{ else }}
-<table id="clients-table" class="hidden sortable pure-table pure-table-bordered center">
+<table id="clients-table" class="sortable pure-table pure-table-bordered center">
   <thead>
       <tr>
+          <th>Friendly Name</th>
           <th>Client ID</th>
           <th>Last Known IP</th>
+          <th>Authenticated</th>
+          <th></th>
       </tr>
   </thead>
   <tbody>
       {{ range $i, $v := .TemplateData.Clients }} 
       <tr>
-          <td>{{ $v.Id }}</td>
-          <td>{{ $v.Ip }}</td>
+          <td>{{ $v.Name }}</td>
+          <td>{{ $v.UUID }}</td>
+          <td>{{ $v.IP }}</td>
+          <td>{{ if $v.Auth }} Yes {{ else }} No {{ end }}</td>
           <td>
-            <a href="/admin/clients/{{ $v.UUID }}/deauth" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
+            {{ if $v.Auth }}
+            <a href="/admin/clients/{{ $v.UUID }}/deauth" class="primary"><i class="fa fa-2 fa-toggle-on"></i></a>
+            {{ else }}
+            <a href="/admin/clients/{{ $v.UUID }}/auth" class="error"><i class="fa fa-2 fa-toggle-off"></i></a>
+            {{ end }}
           </td>
       </tr>
       {{ end }}

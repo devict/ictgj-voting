@@ -1,5 +1,11 @@
-# Ignore the binary
+# Ignore the binaries
 gjvote
+gjvote.darwin64
+gjvote.linux386
+gjvote.linux64
+gjvote.linuxarm
+gjvote.win386.exe
+gjvote.win64.exe
 
 # Ignore the DB
 gjvote.db

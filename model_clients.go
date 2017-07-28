@@ -42,6 +42,22 @@ func dbGetClient(id string) *Client {
 	return cl
 }
 
+func dbGetClientByIp(ip string) *Client {
+	var err error
+	if err = db.OpenDB(); err != nil {
+		return nil
+	}
+	defer db.CloseDB()
+
+	allClients := dbGetAllClients()
+	for i := range allClients {
+		if allClients[i].IP == ip {
+			return &allClients[i]
+		}
+	}
+	return nil
+}
+
 func dbSetClientName(cid, name string) error {
 	var err error
 	if err = db.OpenDB(); err != nil {
@@ -84,7 +100,7 @@ func dbAuthClient(cid, ip string) error {
 	}
 	defer db.CloseDB()
 
-	err = db.SetBool([]string{"clients", cid}, "auth", false)
+	err = db.SetBool([]string{"clients", cid}, "auth", true)
 	if err != nil {
 		return err
 	}

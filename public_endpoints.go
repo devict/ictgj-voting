@@ -17,9 +17,7 @@ func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 
 func handleMain(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
-	showWaiting := (dbGetAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth
-	showWaiting = showWaiting && (dbGetPublicSiteMode() == SiteModeWaiting)
-	if showWaiting {
+	if dbGetPublicSiteMode() == SiteModeWaiting {
 		page.SubTitle = ""
 		page.show("public-waiting.html", w)
 	} else {
@@ -29,6 +27,11 @@ func handleMain(w http.ResponseWriter, req *http.Request) {
 
 func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
+	// Client authentication required
+	if (dbGetAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
+		page.show("unauthorized.html", w)
+		return
+	}
 	type votingPageData struct {
 		Teams     []Team
 		Timestamp string
@@ -51,6 +54,12 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 
 func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
+	// Client authentication required
+	if (dbGetAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
+		page.show("unauthorized.html", w)
+		return
+	}
+
 	page.SubTitle = ""
 
 	// Check if we already have a vote for this client id/timestamp
@@ -79,6 +88,7 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleThumbnailRequest(w http.ResponseWriter, req *http.Request) {
+	// Thumbnail requests are open even without client authentication
 	vars := mux.Vars(req)
 	ss := dbGetTeamGameScreenshot(vars["teamid"], vars["imageid"])
 	if ss == nil {
@@ -95,6 +105,7 @@ func handleThumbnailRequest(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleImageRequest(w http.ResponseWriter, req *http.Request) {
+	// Image requests are open even without client authentication
 	vars := mux.Vars(req)
 	ss := dbGetTeamGameScreenshot(vars["teamid"], vars["imageid"])
 	if ss == nil {
@@ -111,6 +122,7 @@ func handleImageRequest(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
+	// Team Management pages are open even without client authentication
 	if dbGetPublicSiteMode() == SiteModeVoting {
 		redirect("/", w, req)
 	}

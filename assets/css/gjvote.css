@@ -25,6 +25,10 @@ div.half {
   margin-left: 0;
 }
 
+.fa-2 {
+  font-size: 2em;
+}
+
 .primary {
   color: #0078e7;
 }
@@ -32,6 +36,15 @@ div.half {
 .primary-bg {
   background-color: #0078e7;
 }
+
+.error {
+  color: #DD0000;
+}
+
+.error-bg {
+  background-color: #DD0000;
+}
+
 
 input.file {
   padding: .5em .6em;
@@ -238,6 +251,14 @@ div.fullscreen {
   text-align: center;
   margin: auto auto;
   z-index:1001;
+}
+
+.pure-form input[disabled]:not([type]).disabled-but-visible {
+  background-color: #FFF;
+  color: #555;
+}
+input.larger {
+  width: 400px;
 }
 
 @media (min-width: 40em) {

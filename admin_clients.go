@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 
@@ -23,16 +22,27 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 	} else {
 		switch vars["function"] {
 		case "add":
-			type actClientPageData struct {
-				Id string
+			page.SubTitle = "Authenticate Client"
+			cli := dbGetClient(clientId)
+			if cli.IP == "" {
+				cli.IP = clientIp
 			}
-			page.TemplateData = actClientPageData{Id: clientId}
+			type actClientPageData struct {
+				Id   string
+				Ip   string
+				Name string
+			}
+			page.TemplateData = actClientPageData{Id: cli.UUID, Ip: cli.IP, Name: cli.Name}
 			page.show("admin-activateclient.html", w)
 		case "auth":
 			email := req.FormValue("email")
 			password := req.FormValue("password")
-			remember := req.FormValue("remember")
-			if doLogin(email, password) == nil {
+			clientName := req.FormValue("clientname")
+			if clientName != "" {
+				dbSetClientName(clientId, clientName)
+			}
+			dbUpdateClientIP(clientId, clientIp)
+			if page.LoggedIn || doLogin(email, password) == nil {
 				// Received a valid login
 				// Authenticate the client
 				if dbAuthClient(clientId, clientIp) == nil {
@@ -40,16 +50,12 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 				} else {
 					page.session.setFlashMessage("Client Authentication Failed", "error")
 				}
-				if remember == "on" {
-					// Go ahead and log in
-					page.session.setStringValue("email", email)
+				if page.LoggedIn {
 					redirect("/admin/clients", w, req)
 				}
 			}
 			redirect("/", w, req)
 		case "deauth":
-			remember := req.FormValue("remember")
-			fmt.Println("Remember: ", remember)
 			dbDeAuthClient(clientId)
 			redirect("/admin/clients", w, req)
 		}
@@ -57,7 +63,8 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 }
 
 func clientIsAuthenticated(cid string, req *http.Request) bool {
-	return clientIsServer(req) || dbClientIsAuth(cid)
+	return dbClientIsAuth(cid)
+	//return clientIsServer(req) || dbClientIsAuth(cid)
 }
 
 func clientIsServer(req *http.Request) bool {

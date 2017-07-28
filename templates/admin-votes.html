@@ -1,9 +1,11 @@
+<div class="results-container">
 <h2>Current Results</h2>
-<ol>
 {{ range $i, $v := .TemplateData.Results }}
-  <li>{{ $v.Name }}</li>
+  {{ range $ti, $tv := $v.Teams }}
+    {{ $v.Rank }}: {{ $tv.Name }}<br />
+  {{ end }}
 {{ end }}
-</ol>
+</div>
 <table id="votes-table" class="sortable pure-table pure-table-bordered center">
   <thead>
     <tr>
