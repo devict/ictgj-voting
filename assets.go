@@ -190,11 +190,13 @@ var _escData = map[string]*_escFile{
 
 	"/assets/css/admin.css": {
 		local:   "assets/css/admin.css",
-		size:    121,
-		modtime: 1498081060,
+		size:    291,
+		modtime: 1501270412,
 		compressed: `
-H4sIAAAJbogA/0rJLNNLzs8rSc0rUajmUlDITSxKz8zTzUlNK7FSMDQ1KKiw5qrl4gIpS8ovKcnP1S0u
-SExORVYLEQephirOzE3XK8kozU3KS8zMAatMLi0qzi+yUijIzwRaVQRSBQgAAP//D/6XxHkAAAA=
+H4sIAAAJbogA/2TPwW7DIAwG4DtPYalnqnbTDkmueRECjFkDjAxMlaa8+yCJom29/nz4tw1+XTXFYmOB
+bwEQFDuM0tv3MsL97ZYek1iF6GyhUijInJS2v+2ed31gDO5aPmpYokK/SV05E4+QCFsVnyPZ5upLln0D
+hdHyphdiY5u+pwdk8mjgMgzDdL5IVgZrHuG1F7ZU6U/HVKNpg3zvuczzPD1v+HLbPyRlDEZ3XPk//atX
+8RMAAP//j2OxNiMBAAA=
 `,
 	},
 
@@ -12054,17 +12056,17 @@ Xo6z3V9nVvnKh0MZ+h0AAP//kX1qvCYDAAA=
 
 	"/templates/admin-main.html": {
 		local:   "templates/admin-main.html",
-		size:    1476,
-		modtime: 1500477228,
+		size:    1541,
+		modtime: 1501270519,
 		compressed: `
-H4sIAAAJbogA/6xTTQ/aMAy971d4FRKXtQHtNrWVEJN22oc2tp1Da0q0NGFJWoQQ/30OAVTxMVDhgpPY
-fjy/56alaKGQ3NosKrRyqFyUvwHw7z7Safk+/9bMpSjgsy4xZXQPiXnjnFagVUHJP1m0FqrU60Tqgjuh
-VbI0uMiGjJe1UKymXjYaRsc/WzUG44AQO11VEuOFMNZBJwHbLYgF4F9IAgNPAEaw23W7V0bU3GyoFlVJ
-uSj/zYUTqkpZqOhNd/xfupR4gO34Lttf+pxsyg7qp2/j+MKMiZR6jSWEPpihIcJc2r7O8MYtn3RnQhAP
-evNVyQ34eto0QXRokKkUdLHP2HWaobdlpxHuGzZRmwNnmHLlfcCr7sWx/725FRfGThtjPOh3tI10XT+1
-DAfCMlxVCAPxDgYtfMggmWG9kqTjR+54QN23SJFT9aBNvvAa6T1l9HIECZMEbBbAT6y76bPF81LDDyy8
-/lfW7VL36EH7WpLQDvefAt7Yg/7gDnntwWc+vhq8InU9+CcfXw3eWDQe/KePV1bsEP4FAAD//8Y0rK/E
-BQAA
+H4sIAAAJbogA/6xTTW/bMAy991dwRoBcJrvtboVjIMiAnfaBrtvOis04QmUpk2QHQdH/PtJygmRN2yDt
+xbLIp6dHPiqvVAellt5PktKagCYkxQUAx3mlv+Wn4kc716qEr7bCPKN9TMzbEKwBa0pK3k+StTKVXafa
+ljIoa9Klw8VknMmqUSZr6Gx2OU62l61ahyIyiGDrWqNYKOcD7CXg4QHUAvAvpFEBC4BLeHzcP71yqpFu
+Q1g0FeWS4o9UQZk6zyLibLlXL8qlxAlqr15V+9v+LzbPhu7nH4R4YsZUa7vGCuI5uENHgqX25zoj27B8
+oztTojjRm+9Gb4DxNGmK5FAhM61o499i166Gsy3blfC6YVOzGTTDTBr2AY+6JwR/n52KwditXIe+1cEL
+foVSGXTxHS6vi1nrHF92GxHk8/VA7KSpEUbqI4w6uJlAeofNSlNTP8sg4xX7uMDA0CNHHWFl47egHkbB
+W2nuKXbTb0OXfpMN0j6fO8iKLV1sxMXh/67sg+Dh5LJX8BNLNvDIvD41LjnR/4488OP+LeEzg3Q+eeBG
+EXnfsPcmr6nBTP6F1/cmbz06Jv/F65EZHZZ/AQAA//8pWoRoBQYAAA==
 `,
 	},
 
