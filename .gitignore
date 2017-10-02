@@ -7,5 +7,5 @@ gjvote.linuxarm
 gjvote.win386.exe
 gjvote.win64.exe
 
-# Ignore the DB
-gjvote.db
+# Ignore the DBs
+*.db
