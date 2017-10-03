@@ -6,6 +6,7 @@ import (
 	"github.com/br0xen/boltease"
 )
 
+// Gamejam is specifically for an archived game jam
 type Gamejam struct {
 	UUID  string
 	Name  string

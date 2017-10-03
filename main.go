@@ -273,6 +273,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "fa-users"})
 		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "fa-gamepad"})
 		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
+		p.Menu = append(p.Menu, menuItem{"Archive", "/admin/archive", "fa-archive"})
 		p.Menu = append(p.Menu, menuItem{"Clients", "/admin/clients", "fa-desktop"})
 
 		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "fa-user"})
