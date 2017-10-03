@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -56,14 +55,12 @@ func getCondorcetResult() []Ranking {
 			teamWins[allPairs[i].winner.UUID]++
 		}
 	}
-	fmt.Println(teamWins)
 
 	// Rank them by wins
 	rankedWins := make(map[int][]string)
 	for k, v := range teamWins {
 		rankedWins[v] = append(rankedWins[v], k)
 	}
-	fmt.Println(rankedWins)
 	currRank := 1
 	for len(rankedWins) > 0 {
 		topWins := 0

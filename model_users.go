@@ -4,73 +4,73 @@ import "golang.org/x/crypto/bcrypt"
 
 // dbHasUser
 // Returns true if there are any users in the database
-func dbHasUser() bool {
-	return len(dbGetAllUsers()) > 0
+func (db *gjDatabase) hasUser() bool {
+	return len(db.getAllUsers()) > 0
 }
 
-func dbGetAllUsers() []string {
-	if err := db.OpenDB(); err != nil {
+func (db *gjDatabase) getAllUsers() []string {
+	if err := db.open(); err != nil {
 		return []string{}
 	}
-	defer db.CloseDB()
+	defer db.close()
 
-	usrs, err := db.GetBucketList([]string{"users"})
+	usrs, err := db.bolt.GetBucketList([]string{"users"})
 	if err != nil {
 		return []string{}
 	}
 	return usrs
 }
 
-func dbIsValidUserEmail(email string) bool {
-	if err := db.OpenDB(); err != nil {
+func (db *gjDatabase) isValidUserEmail(email string) bool {
+	if err := db.open(); err != nil {
 		return false
 	}
-	defer db.CloseDB()
+	defer db.close()
 
 	usrPath := []string{"users", email}
-	_, err := db.GetValue(usrPath, "password")
+	_, err := db.bolt.GetValue(usrPath, "password")
 	return err == nil
 }
 
-func dbCheckCredentials(email, pw string) error {
+func (db *gjDatabase) checkCredentials(email, pw string) error {
 	var err error
-	if err = db.OpenDB(); err != nil {
+	if err = db.open(); err != nil {
 		return err
 	}
-	defer db.CloseDB()
+	defer db.close()
 
 	var uPw string
 	usrPath := []string{"users", email}
-	if uPw, err = db.GetValue(usrPath, "password"); err != nil {
+	if uPw, err = db.bolt.GetValue(usrPath, "password"); err != nil {
 		return err
 	}
 	return bcrypt.CompareHashAndPassword([]byte(uPw), []byte(pw))
 }
 
-// dbUpdateUserPassword
+// updateUserPassword
 // Takes an email address and a password
 // Creates the user if it doesn't exist, encrypts the password
 // and updates it in the db
-func dbUpdateUserPassword(email, password string) error {
+func (db *gjDatabase) updateUserPassword(email, password string) error {
 	cryptPw, cryptError := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if cryptError != nil {
 		return cryptError
 	}
-	if err := db.OpenDB(); err != nil {
+	if err := db.open(); err != nil {
 		return err
 	}
-	defer db.CloseDB()
+	defer db.close()
 
 	usrPath := []string{"users", email}
-	return db.SetValue(usrPath, "password", string(cryptPw))
+	return db.bolt.SetValue(usrPath, "password", string(cryptPw))
 }
 
-func dbDeleteUser(email string) error {
+func (db *gjDatabase) deleteUser(email string) error {
 	var err error
-	if err = db.OpenDB(); err != nil {
+	if err = db.open(); err != nil {
 		return err
 	}
-	defer db.CloseDB()
+	defer db.close()
 
-	return db.DeleteBucket([]string{"users"}, email)
+	return db.bolt.DeleteBucket([]string{"users"}, email)
 }

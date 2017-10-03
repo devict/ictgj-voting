@@ -72,7 +72,7 @@ func handleAdminSetAuthMode(w http.ResponseWriter, req *http.Request, page *page
 	if err != nil {
 		page.session.setFlashMessage("Invalid Authentication Mode: "+vars["id"], "error")
 	}
-	if dbSetAuthMode(newMode) != nil {
+	if db.setAuthMode(newMode) != nil {
 		page.session.setFlashMessage("Invalid Authentication Mode: "+vars["id"], "error")
 	}
 	redirect("/admin", w, req)

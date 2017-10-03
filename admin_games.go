@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -25,46 +24,50 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 			Teams []Team
 		}
 		gpd := new(gamesPageData)
-		gpd.Teams = dbGetAllTeams()
+		gpd.Teams = db.getAllTeams()
 		page.TemplateData = gpd
 		page.SubTitle = "Games"
 		page.show("admin-games.html", w)
 	} else {
-		switch vars["function"] {
-		case "save":
-			name := req.FormValue("gamename")
-			desc := req.FormValue("gamedesc")
-			link := req.FormValue("gamelink")
-			if dbIsValidTeam(teamId) {
-				if err := dbUpdateTeamGame(teamId, name, link, desc); err != nil {
+		tm := db.getTeam(teamId)
+		if tm != nil {
+			switch vars["function"] {
+			case "save":
+				gm := newGame(tm.UUID)
+				gm.Name = req.FormValue("gamename")
+				gm.Link = req.FormValue("gamelink")
+				gm.Description = req.FormValue("gamedesc")
+				if err := gm.save(); err != nil {
 					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("Team game updated", "success")
 				}
-				redirect("/admin/teams/"+teamId+"#game", w, req)
+				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+			case "screenshotupload":
+				if err := saveScreenshots(tm, req); err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				}
+				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+			case "screenshotdelete":
+				ssid := vars["subid"]
+				if err := tm.deleteScreenshot(ssid); err != nil {
+					page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
+				}
+				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
 			}
-		case "screenshotupload":
-			if err := saveScreenshots(teamId, req); err != nil {
-				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
-			}
-			redirect("/admin/teams/"+teamId+"#game", w, req)
-		case "screenshotdelete":
-			ssid := vars["subid"]
-			if err := dbDeleteTeamGameScreenshot(teamId, ssid); err != nil {
-				page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
-			}
-			redirect("/admin/teams/"+teamId+"#game", w, req)
+		} else {
+			page.session.setFlashMessage("Not a valid team id", "error")
+			redirect("/admin/teams", w, req)
 		}
 	}
 }
 
-func saveScreenshots(teamId string, req *http.Request) error {
+func saveScreenshots(tm *Team, req *http.Request) error {
 	var err error
 	file, hdr, err := req.FormFile("newssfile")
 	if err != nil {
 		return err
 	}
-	fmt.Println("File Received: " + hdr.Filename)
 	extIdx := strings.LastIndex(hdr.Filename, ".")
 	fltp := "png"
 	if len(hdr.Filename) > extIdx {
@@ -90,7 +93,7 @@ func saveScreenshots(teamId string, req *http.Request) error {
 	}
 	thmString = base64.StdEncoding.EncodeToString(thmBuf.Bytes())
 
-	return dbSaveTeamGameScreenshot(teamId, &Screenshot{
+	return tm.saveScreenshot(&Screenshot{
 		Image:     base64.StdEncoding.EncodeToString(buf.Bytes()),
 		Thumbnail: thmString,
 		Filetype:  fltp,
