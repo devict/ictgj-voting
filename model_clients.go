@@ -14,7 +14,7 @@ type Client struct {
 	IP   string
 }
 
-func (db *gjDatabase) getAllClients() []Client {
+func (db *currJamDb) getAllClients() []Client {
 	var ret []Client
 	var err error
 	if err = db.open(); err != nil {
@@ -34,7 +34,7 @@ func (db *gjDatabase) getAllClients() []Client {
 	return ret
 }
 
-func (db *gjDatabase) getClient(id string) *Client {
+func (db *currJamDb) getClient(id string) *Client {
 	var err error
 	if err = db.open(); err != nil {
 		return nil
@@ -49,7 +49,7 @@ func (db *gjDatabase) getClient(id string) *Client {
 	return cl
 }
 
-func (db *gjDatabase) getClientByIp(ip string) *Client {
+func (db *currJamDb) getClientByIp(ip string) *Client {
 	var err error
 	if err = db.open(); err != nil {
 		return nil
