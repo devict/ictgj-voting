@@ -7,14 +7,18 @@ import (
 	"github.com/br0xen/boltease"
 )
 
-var db *boltease.DB
-var dbOpened int
+// TODO: I don't think we need a global for this...
+var db *currJamDb
 
-const (
-	SiteModeWaiting = iota
-	SiteModeVoting
-	SiteModeError
-)
+// gjdb is the interface that works for the current jam database as well as all archive databases
+type gjdb interface {
+	getDB() *boltease.DB
+	open() error
+	close() error
+
+	getJamName() string
+	setJamName(nm string)
+}
 
 const (
 	AuthModeAuthentication = iota
@@ -22,20 +26,21 @@ const (
 	AuthModeError
 )
 
-func GetDefaultSiteConfig() *siteData {
-	ret := new(siteData)
-	ret.Title = "ICT GameJam"
-	ret.Port = 8080
-	ret.SessionName = "ict-gamejam"
-	ret.ServerDir = "./"
-	return ret
+// currJamDb also contains site configuration information
+type currJamDb struct {
+	bolt     *boltease.DB
+	dbOpened int
 }
 
-func openDatabase() error {
-	dbOpened += 1
-	if dbOpened == 1 {
+func (db *currJamDb) getDB() *boltease.DB {
+	return db.bolt
+}
+
+func (db *currJamDb) open() error {
+	db.dbOpened += 1
+	if db.dbOpened == 1 {
 		var err error
-		db, err = boltease.Create(DbName, 0600, nil)
+		db.bolt, err = boltease.Create(DbName, 0600, nil)
 		if err != nil {
 			return err
 		}
@@ -43,60 +48,79 @@ func openDatabase() error {
 	return nil
 }
 
-func closeDatabase() error {
-	dbOpened -= 1
-	if dbOpened == 0 {
-		return db.CloseDB()
+func (db *currJamDb) close() error {
+	db.dbOpened -= 1
+	if db.dbOpened == 0 {
+		return db.bolt.CloseDB()
 	}
 	return nil
 }
 
-func initDatabase() error {
+// initialize the 'current jam' database
+func (db *currJamDb) initialize() error {
 	var err error
-	if err = openDatabase(); err != nil {
+	if err = db.open(); err != nil {
 		return err
 	}
-	defer closeDatabase()
+	defer db.close()
 
 	// Create the path to the bucket to store admin users
-	if err := db.MkBucketPath([]string{"users"}); err != nil {
+	if err := db.bolt.MkBucketPath([]string{"users"}); err != nil {
 		return err
 	}
 	// Create the path to the bucket to store jam informations
-	if err := db.MkBucketPath([]string{"jam"}); err != nil {
+	if err := db.bolt.MkBucketPath([]string{"jam"}); err != nil {
 		return err
 	}
 	// Create the path to the bucket to store site config data
-	return db.MkBucketPath([]string{"site"})
+	return db.bolt.MkBucketPath([]string{"site"})
 }
 
-func dbSetCurrentJam(name string) error {
+func (db *currJamDb) getSiteConfig() *siteData {
+	var ret *siteData
+	def := NewSiteData()
 	var err error
-	if err = openDatabase(); err != nil {
+	if err = db.open(); err != nil {
+		return def
+	}
+	defer db.close()
+
+	ret = new(siteData)
+	siteConf := []string{"site"}
+	if ret.Title, err = db.bolt.GetValue(siteConf, "title"); err != nil {
+		ret.Title = def.Title
+	}
+	if ret.Port, err = db.bolt.GetInt(siteConf, "port"); err != nil {
+		ret.Port = def.Port
+	}
+	if ret.SessionName, err = db.bolt.GetValue(siteConf, "session-name"); err != nil {
+		ret.SessionName = def.SessionName
+	}
+	if ret.ServerDir, err = db.bolt.GetValue(siteConf, "server-dir"); err != nil {
+		ret.ServerDir = def.ServerDir
+	}
+	return ret
+}
+
+func (db *currJamDb) setJamName(name string) error {
+	var err error
+	if err = db.open(); err != nil {
 		return err
 	}
-	defer closeDatabase()
+	defer db.close()
 
-	return db.SetValue([]string{"site"}, "current-jam", name)
+	return db.bolt.SetValue([]string{"site"}, "current-jam", name)
 }
 
-func dbHasCurrentJam() bool {
-	var err error
-	if _, err = dbGetCurrentJam(); err != nil {
-		return false
-	}
-	return true
-}
-
-func dbGetCurrentJam() (string, error) {
+func (db *currJamDb) getJamName() string {
 	var ret string
 	var err error
-	if err = openDatabase(); err != nil {
+	if err = db.open(); err != nil {
 		return "", err
 	}
-	defer closeDatabase()
+	defer db.close()
 
-	ret, err = db.GetValue([]string{"site"}, "current-jam")
+	ret, err = db.bolt.GetValue([]string{"site"}, "current-jam")
 
 	if err == nil && strings.TrimSpace(ret) == "" {
 		return ret, errors.New("No Jam Name Specified")
@@ -104,78 +128,32 @@ func dbGetCurrentJam() (string, error) {
 	return ret, err
 }
 
-func dbGetSiteConfig() *siteData {
-	var ret *siteData
-	def := GetDefaultSiteConfig()
-	var err error
-	if err = openDatabase(); err != nil {
-		return def
-	}
-	defer closeDatabase()
-
-	ret = new(siteData)
-	siteConf := []string{"site"}
-	if ret.Title, err = db.GetValue(siteConf, "title"); err != nil {
-		ret.Title = def.Title
-	}
-	if ret.Port, err = db.GetInt(siteConf, "port"); err != nil {
-		ret.Port = def.Port
-	}
-	if ret.SessionName, err = db.GetValue(siteConf, "session-name"); err != nil {
-		ret.SessionName = def.SessionName
-	}
-	if ret.ServerDir, err = db.GetValue(siteConf, "server-dir"); err != nil {
-		ret.ServerDir = def.ServerDir
-	}
-	return ret
-}
-
-func dbSaveSiteConfig(dat *siteData) error {
-	var err error
-	if err = openDatabase(); err != nil {
-		return err
-	}
-	defer closeDatabase()
-
-	siteConf := []string{"site"}
-	if err = db.SetValue(siteConf, "title", dat.Title); err != nil {
-		return err
-	}
-	if err = db.SetInt(siteConf, "port", dat.Port); err != nil {
-		return err
-	}
-	if err = db.SetValue(siteConf, "session-name", dat.SessionName); err != nil {
-		return err
-	}
-	return db.SetValue(siteConf, "server-dir", dat.ServerDir)
-}
-
-func dbGetAuthMode() int {
-	if ret, err := db.GetInt([]string{"site"}, "auth-mode"); err != nil {
+func (db *currJamDb) getAuthMode() int {
+	if ret, err := db.bolt.GetInt([]string{"site"}, "auth-mode"); err != nil {
 		return AuthModeAuthentication
 	} else {
 		return ret
 	}
 }
 
-func dbSetAuthMode(mode int) error {
+func (db *currJamDb) setAuthMode(mode int) error {
 	if mode < 0 || mode >= AuthModeError {
 		return errors.New("Invalid site mode")
 	}
-	return db.SetInt([]string{"site"}, "auth-mode", mode)
+	return db.bolt.SetInt([]string{"site"}, "auth-mode", mode)
 }
 
-func dbGetPublicSiteMode() int {
-	if ret, err := db.GetInt([]string{"site"}, "public-mode"); err != nil {
+func (db *currJamDb) getPublicSiteMode() int {
+	if ret, err := db.bolt.GetInt([]string{"site"}, "public-mode"); err != nil {
 		return SiteModeWaiting
 	} else {
 		return ret
 	}
 }
 
-func dbSetPublicSiteMode(mode int) error {
+func (db *currJamDb) setPublicSiteMode(mode int) error {
 	if mode < 0 || mode >= SiteModeError {
 		return errors.New("Invalid site mode")
 	}
-	return db.SetInt([]string{"site"}, "public-mode", mode)
+	return db.bolt.SetInt([]string{"site"}, "public-mode", mode)
 }

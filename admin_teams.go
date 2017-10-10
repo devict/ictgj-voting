@@ -11,7 +11,7 @@ import (
 )
 
 func refreshTeamsInMemory() {
-	site.Teams = dbGetAllTeams()
+	site.Teams = db.getAllTeams()
 }
 
 func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) {
@@ -23,11 +23,11 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		switch vars["function"] {
 		case "save":
 			name := req.FormValue("teamname")
-			if dbGetTeamByName(name) != nil {
+			if db.getTeamByName(name) != nil {
 				// A team with that name already exists
 				page.session.setFlashMessage("A team with the name "+name+" already exists!", "error")
 			} else {
-				if err := dbCreateNewTeam(name); err != nil {
+				if err := db.newTeam(name); err != nil {
 					page.session.setFlashMessage(err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("Team "+name+" created!", "success")
@@ -41,13 +41,13 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		}
 	} else if teamId != "" {
 		// Functions for existing team
-		if dbIsValidTeam(teamId) {
+		tm := db.getTeam(teamId)
+		if tm != nil {
 			switch vars["function"] {
 			case "save":
-				tm := new(Team)
 				tm.UUID = teamId
 				tm.Name = req.FormValue("teamname")
-				if err := dbUpdateTeam(teamId, tm); err != nil {
+				if err := tm.save(); err != nil {
 					page.session.setFlashMessage("Error updating team: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("Team Updated!", "success")
@@ -56,20 +56,20 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				redirect("/admin/teams", w, req)
 			case "delete":
 				var err error
-				t := dbGetTeam(teamId)
-				if err = dbDeleteTeam(teamId); err != nil {
+				if err = tm.delete(); err != nil {
 					page.session.setFlashMessage("Error deleting team: "+err.Error(), "error")
 				} else {
-					page.session.setFlashMessage("Team "+t.Name+" Deleted", "success")
+					page.session.setFlashMessage("Team "+tm.Name+" Deleted", "success")
 				}
 				refreshTeamsInMemory()
 				redirect("/admin/teams", w, req)
 			case "savemember":
 				mbrName := req.FormValue("newmembername")
-				mbrSlack := req.FormValue("newmemberslackid")
-				mbrTwitter := req.FormValue("newmembertwitter")
-				mbrEmail := req.FormValue("newmemberemail")
-				if err := dbAddTeamMember(teamId, mbrName, mbrEmail, mbrSlack, mbrTwitter); err != nil {
+				mbr := newTeamMember(mbrName)
+				mbr.SlackId = req.FormValue("newmemberslackid")
+				mbr.Twitter = req.FormValue("newmembertwitter")
+				mbr.Email = req.FormValue("newmemberemail")
+				if err := tm.updateTeamMember(mbr); err != nil {
 					page.session.setFlashMessage("Error adding team member: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage(mbrName+" added to team!", "success")
@@ -77,18 +77,21 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				refreshTeamsInMemory()
 				redirect("/admin/teams/"+teamId+"#members", w, req)
 			case "deletemember":
-				mbrId := req.FormValue("memberid")
-				m, _ := dbGetTeamMember(teamId, mbrId)
-				if err := dbDeleteTeamMember(teamId, mbrId); err != nil {
-					page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
+				m := tm.getTeamMember(req.FormValue("memberid"))
+				if m != nil {
+					if err := tm.deleteTeamMember(m); err != nil {
+						page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
+					} else {
+						page.session.setFlashMessage(m.Name+" deleted from team", "success")
+					}
+					refreshTeamsInMemory()
 				} else {
-					page.session.setFlashMessage(m.Name+" deleted from team", "success")
+					page.session.setFlashMessage("Couldn't find team member to delete", "error")
 				}
-				refreshTeamsInMemory()
 				redirect("/admin/teams/"+teamId+"#members", w, req)
 			default:
 				page.SubTitle = "Edit Team"
-				t := dbGetTeam(teamId)
+				t := db.getTeam(teamId)
 				page.TemplateData = t
 				page.show("admin-editteam.html", w)
 			}
@@ -101,7 +104,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		type teamsPageData struct {
 			Teams []Team
 		}
-		page.TemplateData = teamsPageData{Teams: dbGetAllTeams()}
+		page.TemplateData = teamsPageData{Teams: db.getAllTeams()}
 		page.SubTitle = "Teams"
 		page.show("admin-teams.html", w)
 	}

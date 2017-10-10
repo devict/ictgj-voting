@@ -23,29 +23,6 @@ import (
 const AppName = "gjvote"
 const DbName = AppName + ".db"
 
-// SiteData is stuff that stays the same
-type siteData struct {
-	Title       string
-	Port        int
-	SessionName string
-	ServerDir   string
-	DevMode     bool
-
-	CurrentJam string
-
-	Teams []Team
-	Votes []Vote
-}
-
-func (s *siteData) getTeamByUUID(uuid string) *Team {
-	for i := range s.Teams {
-		if s.Teams[i].UUID == uuid {
-			return &s.Teams[i]
-		}
-	}
-	return nil
-}
-
 // pageData is stuff that changes per request
 type pageData struct {
 	Site           *siteData
@@ -85,8 +62,9 @@ var site *siteData
 var r *mux.Router
 
 func main() {
+	db = new(gjDatabase)
 	loadConfig()
-	dbSaveSiteConfig(site)
+	site.save()
 	initialize()
 
 	r = mux.NewRouter()
@@ -132,7 +110,7 @@ func main() {
 }
 
 func loadConfig() {
-	site = dbGetSiteConfig()
+	site = db.getSiteConfig()
 
 	if len(os.Args) > 1 {
 		for _, v := range os.Args {
@@ -177,9 +155,9 @@ func loadConfig() {
 
 func initialize() {
 	// Check if the database has been created
-	assertError(initDatabase())
+	assertError(db.initialize())
 
-	if !dbHasUser() {
+	if !db.hasUser() {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Create new Admin user")
 		fmt.Print("Email: ")
@@ -197,20 +175,20 @@ func initialize() {
 				fmt.Println("Entered Passwords don't match!")
 			}
 		}
-		assertError(dbUpdateUserPassword(email, string(pw1)))
+		assertError(db.updateUserPassword(email, string(pw1)))
 	}
-	if !dbHasCurrentJam() {
+	if !db.hasCurrentJam() {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Create New Game Jam")
 		fmt.Print("GameJam Name: ")
 		gjName, _ := reader.ReadString('\n')
 		gjName = strings.TrimSpace(gjName)
-		if dbSetCurrentJam(gjName) != nil {
+		if db.setCurrentJam(gjName) != nil {
 			fmt.Println("Error saving Current Jam")
 		}
 	}
 
-	jmNm, err := dbGetCurrentJam()
+	jmNm, err := db.getCurrentJam()
 	if err == nil {
 		fmt.Println("Current Jam Name: " + jmNm)
 	} else {
@@ -218,8 +196,8 @@ func initialize() {
 	}
 
 	// Load all votes into memory
-	site.Votes = dbGetAllVotes()
-	site.Teams = dbGetAllTeams()
+	site.Votes = db.getAllVotes()
+	site.Teams = db.getAllTeams()
 }
 
 func loggingHandler(h http.Handler) http.Handler {
@@ -246,7 +224,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	// First check if we're logged in
 	userEmail, _ := p.session.getStringValue("email")
 	// With a valid account
-	p.LoggedIn = dbIsValidUserEmail(userEmail)
+	p.LoggedIn = db.isValidUserEmail(userEmail)
 
 	p.Site = site
 	p.SubTitle = "GameJam Voting"
@@ -283,19 +261,20 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	}
 	p.HideAdminMenu = true
 
-	if p.CurrentJam, err = dbGetCurrentJam(); err != nil {
+	if p.CurrentJam, err = db.getCurrentJam(); err != nil {
 		p.FlashMessage = "Error Loading Current GameJam: " + err.Error()
 		p.FlashClass = "error"
 	}
 
 	p.ClientId = p.session.getClientId()
-	p.ClientIsAuth = clientIsAuthenticated(p.ClientId, req)
+	cl := db.getClient(p.ClientId)
+	p.ClientIsAuth = cl.Auth
 	p.ClientIsServer = clientIsServer(req)
 
 	// Public Mode
-	p.PublicMode = dbGetPublicSiteMode()
+	p.PublicMode = db.getPublicSiteMode()
 	// Authentication Mode
-	p.AuthMode = dbGetAuthMode()
+	p.AuthMode = db.getAuthMode()
 
 	return p
 }
@@ -331,7 +310,7 @@ func redirect(url string, w http.ResponseWriter, req *http.Request) {
 }
 
 func resetToDefaults() {
-	def := GetDefaultSiteConfig()
+	def := NewSiteData()
 	fmt.Println("Reset settings to defaults?")
 	fmt.Print(site.Title, " -> ", def.Title, "\n")
 	fmt.Print(site.Port, " -> ", def.Port, "\n")
@@ -342,7 +321,7 @@ func resetToDefaults() {
 	conf, _ := reader.ReadString('\n')
 	conf = strings.ToUpper(strings.TrimSpace(conf))
 	if strings.HasPrefix(conf, "Y") {
-		if dbSaveSiteConfig(def) != nil {
+		if def.save() != nil {
 			errorExit("Error resetting to defaults")
 		}
 		fmt.Println("Reset to defaults")
