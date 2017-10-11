@@ -28,7 +28,7 @@ func handleMain(w http.ResponseWriter, req *http.Request) {
 func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
 	// Client authentication required
-	if (db.getAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
+	if (db.site.getAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
 		page.show("unauthorized.html", w)
 		return
 	}
@@ -55,7 +55,7 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
 	// Client authentication required
-	if (db.getAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
+	if (db.site.getAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
 		page.show("unauthorized.html", w)
 		return
 	}

@@ -6,6 +6,9 @@ import (
 	"github.com/pborman/uuid"
 )
 
+/**
+ * Team
+ */
 type Team struct {
 	UUID    string
 	Name    string
@@ -13,8 +16,130 @@ type Team struct {
 	Game    *Game
 }
 
-// newTeam creates a team with name nm and stores it in the DB
-func (db *gjDatabase) newTeam(nm string) error {
+// Create a team
+func NewTeam(nm string) *Team {
+	return &Team{
+		UUID: uuid.New(),
+		Name: nm,
+	}
+}
+
+type TeamMember struct {
+	UUID    string
+	Name    string
+	SlackId string
+	Twitter string
+	Email   string
+}
+
+// Create a new team member, only a name is required
+func NewTeamMember(nm string) *TeamMember {
+	m := TeamMember{Name: nm}
+	return &m
+}
+
+// LoadAllTeams loads all teams for the jam out of the database
+func (gj *Gamejam) LoadAllTeams() []Team {
+	var err error
+	var ret []Team
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	teamsPath := []string{"jam", "teams"}
+	if tmUUIDs, err = m.bolt.GetBucketList(mbrsPath); err != nil {
+		return ret
+	}
+	for _, v := range tmUUIDs {
+		tm := gj.LoadTeam(v)
+		if tm != nil {
+			ret = append(ret, tm)
+		}
+	}
+	return ret
+}
+
+// Load a team out of the database
+func (gj *Gamejam) LoadTeam(uuid string) *Team {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	// Team Data
+	tmPath := []string{"jam", "teams", uuid}
+	tm := new(Team)
+	tm.UUID = uuid
+	if tm.Name, err = gj.m.bolt.GetValue(tmPath, "name"); err != nil {
+		return nil
+	}
+
+	// Team Members
+	tm.Members = gj.LoadTeamMembers(uuid)
+
+	// Team Game
+	tm.Game = gj.LoadTeamGame(uuid)
+
+}
+
+// Load the members of a team from the DB and return them
+func (gj *Gamejam) LoadTeamMembers(tmId string) []TeamMember {
+	var err error
+	var ret []TeamMember
+	if err = gj.m.openDB(); err != nil {
+		return ret
+	}
+	defer gj.m.closeDB()
+
+	// Team Members
+	var memberUuids []string
+	mbrsPath := []string{"jam", "teams", tmId, "members"}
+	if memberUuids, err = gj.m.bolt.GetBucketList(mbrsPath); err == nil {
+		for _, v := range memberUuids {
+			mbr := gj.LoadTeamMember(tmId, v)
+			if mbr != nil {
+				ret = append(ret, mbr)
+			}
+		}
+	}
+	return ret
+}
+
+// Load a team member from the DB and return it
+func (gj *Gamejam) LoadTeamMember(tmId, mbrId string) *TeamMember {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return nil
+	}
+	defer gj.m.closeDB()
+
+	mbr := new(TeamMember)
+	mbr.UUID = v
+	teamMbrPath := append(mbrsPath, mbr.UUID)
+	// Name is the only required field
+	if mbr.Name, err = gj.m.bolt.GetValue(teamMbrPath, "name"); err != nil {
+		return nil
+	}
+	if mbr.SlackId, err = gj.m.bolt.GetValue(teamMbrPath, "slackid"); err != nil {
+		mbr.SlackId = ""
+	}
+	if mbr.Twitter, err = gj.m.bolt.GetValue(teamMbrPath, "twitter"); err != nil {
+		mbr.Twitter = ""
+	}
+	if mbr.Email, err = gj.m.bolt.GetValue(teamMbrPath, "email"); err != nil {
+		mbr.Email = ""
+	}
+	return mbr
+}
+
+/**
+ * OLD FUNCTIONS
+ */
+
+// NewTeam creates a team with name nm and stores it in the DB
+func NewTeam(nm string) error {
 	var err error
 	if err = db.open(); err != nil {
 		return err
@@ -45,7 +170,7 @@ func (db *gjDatabase) newTeam(nm string) error {
 }
 
 // getTeam returns a team with the given id, or nil
-func (db *gjDatabase) getTeam(id string) *Team {
+func (db *currJamDb) getTeam(id string) *Team {
 	var err error
 	if err = db.open(); err != nil {
 		return nil
@@ -64,7 +189,7 @@ func (db *gjDatabase) getTeam(id string) *Team {
 }
 
 // This function returns the team for a specific member
-func (db *gjDatabase) getTeamForMember(mbrid string) (*Team, error) {
+func (db *currJamDb) getTeamForMember(mbrid string) (*Team, error) {
 	var err error
 	if err = db.open(); err != nil {
 		return nil, err
@@ -87,7 +212,7 @@ func (db *gjDatabase) getTeamForMember(mbrid string) (*Team, error) {
 }
 
 // getAllTeams returns all teams in the database
-func (db *gjDatabase) getAllTeams() []Team {
+func (db *currJamDb) getAllTeams() []Team {
 	var ret []Team
 	var err error
 	if err = db.open(); err != nil {
@@ -109,7 +234,7 @@ func (db *gjDatabase) getAllTeams() []Team {
 }
 
 // getTeamByName returns a team with the given name or nil
-func (db *gjDatabase) getTeamByName(nm string) *Team {
+func (db *currJamDb) getTeamByName(nm string) *Team {
 	var err error
 	if err = db.open(); err != nil {
 		return nil
@@ -212,45 +337,6 @@ func (tm *Team) saveScreenshot(ss *Screenshot) error {
 	return nil
 }
 
-func (tm *Team) getScreenshots() []Screenshot {
-	var ret []Screenshot
-	var err error
-	ssPath := []string{"teams", tm.UUID, "game", "screenshots"}
-	var ssIds []string
-	if ssIds, err = db.bolt.GetBucketList(ssPath); err != nil {
-		return ret
-	}
-	for _, v := range ssIds {
-		if ss := tm.getScreenshot(v); ss != nil {
-			ret = append(ret, *ss)
-		}
-	}
-	return ret
-}
-
-func (tm *Team) getScreenshot(ssId string) *Screenshot {
-	var err error
-	ssPath := []string{"teams", tm.UUID, "game", "screenshots", ssId}
-	ret := new(Screenshot)
-	ret.UUID = ssId
-	if ret.Description, err = db.bolt.GetValue(ssPath, "description"); err != nil {
-		return nil
-	}
-	if ret.Image, err = db.bolt.GetValue(ssPath, "image"); err != nil {
-		return nil
-	}
-	if ret.Thumbnail, err = db.bolt.GetValue(ssPath, "thumbnail"); err != nil {
-		return nil
-	}
-	if ret.Thumbnail == "" {
-		ret.Thumbnail = ret.Image
-	}
-	if ret.Filetype, err = db.bolt.GetValue(ssPath, "filetype"); err != nil {
-		return nil
-	}
-	return ret
-}
-
 func (tm *Team) deleteScreenshot(ssId string) error {
 	var err error
 	if err = db.open(); err != nil {
@@ -260,20 +346,6 @@ func (tm *Team) deleteScreenshot(ssId string) error {
 
 	ssPath := []string{"teams", tm.UUID, "game", "screenshots"}
 	return db.bolt.DeleteBucket(ssPath, ssId)
-}
-
-type TeamMember struct {
-	UUID    string
-	Name    string
-	SlackId string
-	Twitter string
-	Email   string
-}
-
-// Create a new team member, only a name is required
-func newTeamMember(nm string) *TeamMember {
-	m := TeamMember{Name: nm}
-	return &m
 }
 
 func (tm *Team) getTeamMember(mbrId string) *TeamMember {

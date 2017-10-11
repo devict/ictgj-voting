@@ -33,7 +33,7 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 		if tm != nil {
 			switch vars["function"] {
 			case "save":
-				gm := newGame(tm.UUID)
+				gm := db.newGame(tm.UUID)
 				gm.Name = req.FormValue("gamename")
 				gm.Link = req.FormValue("gamelink")
 				gm.Description = req.FormValue("gamedesc")

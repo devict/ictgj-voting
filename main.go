@@ -60,9 +60,14 @@ var sessionSecret = "JCOP5e8ohkTcOzcSMe74"
 var sessionStore = sessions.NewCookieStore([]byte(sessionSecret))
 var site *siteData
 var r *mux.Router
+var m *model
 
 func main() {
-	db = new(gjDatabase)
+	var err error
+	if m, err = NewModel(); err != nil {
+		errorExit("Unable to initialize Model: " + err.Error())
+	}
+
 	loadConfig()
 	site.save()
 	initialize()
@@ -70,13 +75,10 @@ func main() {
 	r = mux.NewRouter()
 	r.StrictSlash(true)
 
-	if site.DevMode {
+	if m.site.DevMode {
 		fmt.Println("Operating in Development Mode")
 	}
-	//s := http.StripPrefix("/assets/", http.FileServer(FS(site.DevMode)))
-	//http.Dir(site.ServerDir+"assets/")))
-	//r.PathPrefix("/assets/").Handler(s)
-	r.PathPrefix("/assets/").Handler(http.FileServer(FS(site.DevMode)))
+	r.PathPrefix("/assets/").Handler(http.FileServer(FS(m.site.DevMode)))
 
 	// Public Subrouter
 	pub := r.PathPrefix("/").Subrouter()
@@ -110,8 +112,6 @@ func main() {
 }
 
 func loadConfig() {
-	site = db.getSiteConfig()
-
 	if len(os.Args) > 1 {
 		for _, v := range os.Args {
 			key := v
@@ -124,27 +124,27 @@ func loadConfig() {
 			}
 			switch key {
 			case "-title":
-				site.Title = val
-				fmt.Print("Set site title: ", site.Title, "\n")
+				m.site.Title = val
+				fmt.Print("Set site title: ", m.site.Title, "\n")
 			case "-port":
 				var tryPort int
 				var err error
 				if tryPort, err = strconv.Atoi(val); err != nil {
 					fmt.Print("Invalid port given: ", val, " (Must be an integer)\n")
-					tryPort = site.Port
+					tryPort = m.site.Port
 				}
 				// TODO: Make sure a valid port number is given
-				site.Port = tryPort
+				m.site.Port = tryPort
 			case "-session-name":
-				site.SessionName = val
+				m.site.SessionName = val
 			case "-server-dir":
 				// TODO: Probably check if the given directory is valid
-				site.ServerDir = val
+				m.site.ServerDir = val
 			case "-help", "-h", "-?":
 				printHelp()
 				done()
 			case "-dev":
-				site.DevMode = true
+				m.site.DevMode = true
 			case "-reset-defaults":
 				resetToDefaults()
 				done()
@@ -154,10 +154,9 @@ func loadConfig() {
 }
 
 func initialize() {
-	// Check if the database has been created
-	assertError(db.initialize())
-
-	if !db.hasUser() {
+	// Test if we have an admin user first
+	if !m.hasUser() {
+		// Nope, create one
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Create new Admin user")
 		fmt.Print("Email: ")
@@ -175,29 +174,26 @@ func initialize() {
 				fmt.Println("Entered Passwords don't match!")
 			}
 		}
-		assertError(db.updateUserPassword(email, string(pw1)))
+		assertError(m.updateUserPassword(email, string(pw1)))
 	}
-	if !db.hasCurrentJam() {
+
+	// Now test if the 'current jam' is named
+	if m.jam.Name == "" {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Create New Game Jam")
 		fmt.Print("GameJam Name: ")
 		gjName, _ := reader.ReadString('\n')
 		gjName = strings.TrimSpace(gjName)
-		if db.setCurrentJam(gjName) != nil {
+		if db.setJamName(gjName) != nil {
 			fmt.Println("Error saving Current Jam")
 		}
 	}
 
-	jmNm, err := db.getCurrentJam()
-	if err == nil {
+	if m.jam.Name != "" {
 		fmt.Println("Current Jam Name: " + jmNm)
 	} else {
-		fmt.Println(err.Error())
+		fmt.Println("No Jam Name Specified")
 	}
-
-	// Load all votes into memory
-	site.Votes = db.getAllVotes()
-	site.Teams = db.getAllTeams()
 }
 
 func loggingHandler(h http.Handler) http.Handler {
@@ -261,7 +257,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	}
 	p.HideAdminMenu = true
 
-	if p.CurrentJam, err = db.getCurrentJam(); err != nil {
+	if p.CurrentJam = db.getJamName(); p.CurrentJam != "" {
 		p.FlashMessage = "Error Loading Current GameJam: " + err.Error()
 		p.FlashClass = "error"
 	}
@@ -274,7 +270,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	// Public Mode
 	p.PublicMode = db.getPublicSiteMode()
 	// Authentication Mode
-	p.AuthMode = db.getAuthMode()
+	p.AuthMode = db.site.getAuthMode()
 
 	return p
 }
@@ -310,12 +306,12 @@ func redirect(url string, w http.ResponseWriter, req *http.Request) {
 }
 
 func resetToDefaults() {
-	def := NewSiteData()
+	def := NewSiteData(m)
 	fmt.Println("Reset settings to defaults?")
-	fmt.Print(site.Title, " -> ", def.Title, "\n")
-	fmt.Print(site.Port, " -> ", def.Port, "\n")
-	fmt.Print(site.SessionName, " -> ", def.SessionName, "\n")
-	fmt.Print(site.ServerDir, " -> ", def.ServerDir, "\n")
+	fmt.Print(m.site.Title, " -> ", def.Title, "\n")
+	fmt.Print(m.site.Port, " -> ", def.Port, "\n")
+	fmt.Print(m.site.SessionName, " -> ", def.SessionName, "\n")
+	fmt.Print(m.site.ServerDir, " -> ", def.ServerDir, "\n")
 	fmt.Println("Are you sure? (y/N): ")
 	reader := bufio.NewReader(os.Stdin)
 	conf, _ := reader.ReadString('\n')

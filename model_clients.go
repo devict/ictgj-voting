@@ -1,12 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
 
+/**
+ * Client
+ * A client is a system that is connecting to the web server
+ */
 type Client struct {
 	UUID string
 	Auth bool
@@ -14,57 +17,53 @@ type Client struct {
 	IP   string
 }
 
-func (db *currJamDb) getAllClients() []Client {
-	var ret []Client
+// Load all clients
+func (m *model) LoadAllClients() []Client {
 	var err error
-	if err = db.open(); err != nil {
-		return ret
+	if err = m.openDB(); err != nil {
+		return err
 	}
-	defer db.close()
+	defer m.closeDB()
 
 	var clientUids []string
-	if clientUids, err = db.bolt.GetBucketList([]string{"clients"}); err != nil {
-		return ret
+	if clientUids, err = m.bolt.GetBucketList([]string{"clients"}); err != nil {
+		return err
 	}
 	for _, v := range clientUids {
-		if cl := db.getClient(v); cl != nil {
-			ret = append(ret, *cl)
+		if cl := m.LoadClient(v); cl != nil {
+			m.clients = append(m.clients, *cl)
 		}
 	}
-	return ret
 }
 
-func (db *currJamDb) getClient(id string) *Client {
+// Load a client from the DB and return it
+func (m *model) LoadClient(clId string) *Client {
 	var err error
-	if err = db.open(); err != nil {
+	if err = m.openDB(); err != nil {
 		return nil
 	}
-	defer db.close()
+	defer m.closeDB()
 
 	cl := new(Client)
 	cl.UUID = id
-	cl.Auth, _ = db.bolt.GetBool([]string{"clients", id}, "auth")
-	cl.Name, _ = db.bolt.GetValue([]string{"clients", id}, "name")
-	cl.IP, _ = db.bolt.GetValue([]string{"clients", id}, "ip")
+	cl.Auth, _ = m.bolt.GetBool([]string{"clients", id}, "auth")
+	cl.Name, _ = m.bolt.GetValue([]string{"clients", id}, "name")
+	cl.IP, _ = m.bolt.GetValue([]string{"clients", id}, "ip")
 	return cl
 }
 
-func (db *currJamDb) getClientByIp(ip string) *Client {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	allClients := db.getAllClients()
-	for i := range allClients {
-		if allClients[i].IP == ip {
-			return &allClients[i]
+func (m *model) getClientById(ip string) *Client {
+	for i := range m.clients {
+		if m.clients[i].IP == ip {
+			return &m.clients[i].IP
 		}
 	}
 	return nil
 }
 
+/**
+ * OLD FUNCTIONS
+ */
 func (c *Client) save() error {
 	var err error
 	if err = db.open(); err != nil {
@@ -79,62 +78,6 @@ func (c *Client) save() error {
 		return err
 	}
 	return db.bolt.SetValue([]string{"clients", c.UUID}, "ip", c.IP)
-}
-
-func (c *Client) getVotes() []Vote {
-	var ret []Vote
-	var err error
-	if err = db.open(); err != nil {
-		return ret
-	}
-	defer db.close()
-
-	var times []string
-	votesBkt := []string{"votes", c.UUID}
-	if times, err = db.bolt.GetBucketList(votesBkt); err != nil {
-		return ret
-	}
-	for _, t := range times {
-		var tm time.Time
-		if tm, err = time.Parse(time.RFC3339, t); err == nil {
-			var vt *Vote
-			if vt, err = c.getVote(tm); err == nil {
-				ret = append(ret, *vt)
-			} else {
-				fmt.Println(err)
-			}
-		}
-	}
-	return ret
-}
-
-func (c *Client) getVote(timestamp time.Time) (*Vote, error) {
-	var err error
-	if err = db.open(); err != nil {
-		return nil, err
-	}
-	defer db.close()
-
-	vt := new(Vote)
-	vt.Timestamp = timestamp
-	vt.ClientId = c.UUID
-	votesBkt := []string{"votes", c.UUID, timestamp.Format(time.RFC3339)}
-	var choices []string
-	if choices, err = db.bolt.GetKeyList(votesBkt); err != nil {
-		// Couldn't find the vote...
-		return nil, err
-	}
-	for _, v := range choices {
-		ch := new(GameChoice)
-		var rank int
-
-		if rank, err = strconv.Atoi(v); err == nil {
-			ch.Rank = rank
-			ch.Team, err = db.bolt.GetValue(votesBkt, v)
-			vt.Choices = append(vt.Choices, *ch)
-		}
-	}
-	return vt, nil
 }
 
 func (c *Client) saveVote(timestamp time.Time, votes []string) error {

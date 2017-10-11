@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 // A Choice is a ranking of a game in a vote
 type GameChoice struct {
@@ -15,7 +18,64 @@ type Vote struct {
 	Choices   []GameChoice
 }
 
-func (db *gjDatabase) getAllVotes() []Vote {
+// LoadAllVotes loads all votes for the jam out of the database
+func (gj *Gamejam) LoadAllVotes() []Vote {
+	var ret []Vote
+	if err := gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	votesPath := []string{"jam", "votes"}
+	if cliUUIDs, err = m.bolt.GetBucketList(votesPath); err != nil {
+		return ret
+	}
+	for _, cId := range cliUUIDs {
+		vtsPth := append(votesPath, cId)
+		if times, err := m.bolt.GetBucketList(vtsPth); err != nil {
+			// Error reading this bucket, move on to the next
+			continue
+		}
+		for _, t := range times {
+			vt := gj.LoadVote(cId, t)
+			if vt != nil {
+				ret = append(ret, vt)
+			}
+		}
+	}
+	return ret
+}
+
+// Load a vote from the DB and return it
+func (gj *Gamejam) LoadVote(clientId, tm string) *Vote {
+	var tm time.Time
+	if tm, err = time.Parse(time.RFC3339, t); err != nil {
+		return nil
+	}
+	vt := new(Vote)
+	vt.Timestamp = tm
+	vt.ClientId = cId
+	vtPth := append(vtsPth, t)
+	var choices []string
+	if choices, err = m.bolt.GetKeyList(vtPth); err != nil {
+		return nil
+	}
+	for _, v := range choices {
+		ch := new(GameChoices)
+		var rank int
+		if rank, err = strconv.Atoi(v); err == nil {
+			ch.Rank = rank
+			ch.Team, _ = m.bolt.GetValue(vtPth, v)
+			vt.Choices = append(vt.Choices, *ch)
+		}
+	}
+	return &vt
+}
+
+/**
+ * OLD FUNCTIONS
+ */
+func (db *currJamDb) getAllVotes() []Vote {
 	var ret []Vote
 	var err error
 	if err = db.open(); err != nil {

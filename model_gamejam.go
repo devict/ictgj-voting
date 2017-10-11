@@ -1,12 +1,11 @@
 package main
 
-import (
-	"time"
+import "time"
 
-	"github.com/br0xen/boltease"
-)
-
-// Gamejam is specifically for an archived game jam
+/**
+ * Gamejam
+ * Gamejam is the struct for any gamejam (current or archived)
+ */
 type Gamejam struct {
 	UUID  string
 	Name  string
@@ -14,74 +13,56 @@ type Gamejam struct {
 	Teams []Team
 	Votes []Vote
 
-	db       *boltease.DB
-	dbOpened int
+	m       *model
+	updates []string
 }
 
-// Archived Gamejam data is stored in it's own file to keep things nice and organized
-func (gj *Gamejam) openDB() error {
-	gj.dbOpened += 1
-	if gj.dbOpened == 1 {
-		var err error
-		gj.db, err = boltease.Create(gj.UUID+".db", 0600, nil)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func NewGamejam(m *model) *Gamejam {
+	gj := new(Gamejam)
+	gj.m = m
+	return gj
 }
 
-func (gj *Gamejam) closeDB() error {
-	gj.dbOpened -= 1
-	if gj.dbOpened == 0 {
-		return gj.db.CloseDB()
-	}
-	return nil
-}
-
-// archiveGameJam creates a separate gamejam file and populates it with the
-// given name, teams, and votes
-func archiveGamejam(nm string, teams []Team, votes []Vote) error {
-	// TODO
-	return nil
-}
-
-// dbGetGamejam returns a gamejam with the given uuid
-// or nil if it couldn't be found
-func dbGetGamejam(id string) *Gamejam {
-	var err error
-	if err = openDatabase(); err != nil {
-		return nil
-	}
-	defer closeDatabase()
-
-	ret := Gamejam{UUID: id}
-	// TODO: Load gamejam teams, other details
-	return ret
-}
-
-// dbGetGamejamByName looks for a gamejam with the given name
-// and returns it, or it returns nil if it couldn't find it
-func dbGetGamejamByName(nm string) *Gamejam {
-	var err error
-	if err = openDatabase(); err != nil {
+func (m *model) LoadCurrentJam() *Gamejam {
+	if err := m.openDB(); err != nil {
 		return err
 	}
-	defer closeDatabase()
+	defer m.closeDB()
 
-	var gjid string
-	if gjs, err = db.GetBucketList([]string{"gamejams"}); err == nil {
-		for _, v := range gjUids {
-			tstNm, _ := db.GetValue([]string{"gamejams", v}, "name")
-			if tstNm == nm {
-				// We've got it
-				gjid = v
-				break
-			}
+	var err error
+	jamPath := []string{"jam"}
+	gj := NewGamejam(m)
+	gj.Name, _ = m.bolt.GetValue(jamPath, "name")
+
+	// Load all teams
+	gj.Teams = gj.LoadAllTeams()
+
+	// Load all votes
+	gj.Votes = gj.LoadAllVotes()
+
+	return gj
+}
+
+func (gj *Gamejam) getTeamByUUID(uuid string) *Team {
+	for i := range gj.Teams {
+		if gj.Teams[i].UUID == uuid {
+			return &gj.Teams[i]
 		}
 	}
-	if gjid == "" {
-		return nil
+	return nil
+}
+
+func (gj *Gamejam) needsSave() bool {
+	return len(updates) > 0
+}
+
+func (gj *Gamejam) saveToDB() error {
+	if err := s.m.openDB(); err != nil {
+		return err
 	}
-	return dbGetGamejam(gjid)
+	defer s.m.closeDB()
+
+	for i := range updates {
+		// TODO: Save
+	}
 }
