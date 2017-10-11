@@ -9,3 +9,6 @@ gjvote.win64.exe
 
 # Ignore the DB
 gjvote.db
+
+# Ignore generated files
+assets.go
