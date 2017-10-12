@@ -14,13 +14,15 @@ type Team struct {
 	Name    string
 	Members []TeamMember
 	Game    *Game
+
+	mPath []string // The path in the DB to this team
 }
 
 // Create a team
-func NewTeam(nm string) *Team {
+func NewTeam(id string) *Team {
 	return &Team{
-		UUID: uuid.New(),
-		Name: nm,
+		UUID:  id,
+		mPath: []string{"jam", "teams", id},
 	}
 }
 
@@ -32,10 +34,12 @@ type TeamMember struct {
 	Email   string
 }
 
-// Create a new team member, only a name is required
-func NewTeamMember(nm string) *TeamMember {
-	m := TeamMember{Name: nm}
-	return &m
+// Create a new team member
+func NewTeamMember(tmId, uId string) *TeamMember {
+	return &TeamMember{
+		UUID:  uId,
+		mPath: []string{"jam", "teams", tmId, "members", uId},
+	}
 }
 
 // LoadAllTeams loads all teams for the jam out of the database
@@ -47,7 +51,6 @@ func (gj *Gamejam) LoadAllTeams() []Team {
 	}
 	defer gj.m.closeDB()
 
-	teamsPath := []string{"jam", "teams"}
 	if tmUUIDs, err = m.bolt.GetBucketList(mbrsPath); err != nil {
 		return ret
 	}
@@ -69,10 +72,8 @@ func (gj *Gamejam) LoadTeam(uuid string) *Team {
 	defer gj.m.closeDB()
 
 	// Team Data
-	tmPath := []string{"jam", "teams", uuid}
-	tm := new(Team)
-	tm.UUID = uuid
-	if tm.Name, err = gj.m.bolt.GetValue(tmPath, "name"); err != nil {
+	tm := NewTeam(uuid)
+	if tm.Name, err = gj.m.bolt.GetValue(tm.mPath, "name"); err != nil {
 		return nil
 	}
 
@@ -82,6 +83,7 @@ func (gj *Gamejam) LoadTeam(uuid string) *Team {
 	// Team Game
 	tm.Game = gj.LoadTeamGame(uuid)
 
+	return tm
 }
 
 // Load the members of a team from the DB and return them
@@ -95,7 +97,8 @@ func (gj *Gamejam) LoadTeamMembers(tmId string) []TeamMember {
 
 	// Team Members
 	var memberUuids []string
-	mbrsPath := []string{"jam", "teams", tmId, "members"}
+	tm := NewTeam(tmId)
+	mbrsPath := append(tm.mPath, "members")
 	if memberUuids, err = gj.m.bolt.GetBucketList(mbrsPath); err == nil {
 		for _, v := range memberUuids {
 			mbr := gj.LoadTeamMember(tmId, v)
@@ -115,24 +118,56 @@ func (gj *Gamejam) LoadTeamMember(tmId, mbrId string) *TeamMember {
 	}
 	defer gj.m.closeDB()
 
-	mbr := new(TeamMember)
-	mbr.UUID = v
-	teamMbrPath := append(mbrsPath, mbr.UUID)
+	mbr := NewTeamMember(tmId, mbrId)
 	// Name is the only required field
-	if mbr.Name, err = gj.m.bolt.GetValue(teamMbrPath, "name"); err != nil {
+	if mbr.Name, err = gj.m.bolt.GetValue(mbr.mPath, "name"); err != nil {
 		return nil
 	}
-	if mbr.SlackId, err = gj.m.bolt.GetValue(teamMbrPath, "slackid"); err != nil {
+	if mbr.SlackId, err = gj.m.bolt.GetValue(mbr.mPath, "slackid"); err != nil {
 		mbr.SlackId = ""
 	}
-	if mbr.Twitter, err = gj.m.bolt.GetValue(teamMbrPath, "twitter"); err != nil {
+	if mbr.Twitter, err = gj.m.bolt.GetValue(mbr.mPath, "twitter"); err != nil {
 		mbr.Twitter = ""
 	}
-	if mbr.Email, err = gj.m.bolt.GetValue(teamMbrPath, "email"); err != nil {
+	if mbr.Email, err = gj.m.bolt.GetValue(mbr.mPath, "email"); err != nil {
 		mbr.Email = ""
 	}
 	return mbr
 }
+
+func (gj *Gamejam) SaveTeam(tm *Team) error {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	// Save team data
+	if err = gj.m.bolt.SetValue(tm.mPath, "name"); err != nil {
+		return err
+	}
+
+	// Save team members
+	for _, mbr := range tm.Members {
+		if err = gj.m.bolt.SetValue(mbr.mPath, "name", mbr.Name); err != nil {
+			return err
+		}
+		if err = gj.m.bolt.SetValue(mbr.mPath, "slackid", mbr.SlackId); err != nil {
+			return err
+		}
+		if err = gj.m.bolt.SetValue(mbr.mPath, "twitter", mbr.Twitter); err != nil {
+			return err
+		}
+		if err = gj.m.bolt.SetValue(mbr.mPath, "email", mbr.Email); err != nil {
+			return err
+		}
+	}
+
+	// Save team game
+	if err = gj.m.bolt.SetValue(tm.
+
+}
+
 
 /**
  * OLD FUNCTIONS
@@ -282,95 +317,6 @@ func (tm *Team) delete() error {
 
 	teamPath := []string{"teams"}
 	return db.bolt.DeleteBucket(teamPath, tm.UUID)
-}
-
-func (tm *Team) getGame() *Game {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	gamePath := []string{"teams", tm.UUID, "game"}
-	gm := new(Game)
-	if gm.Name, err = db.bolt.GetValue(gamePath, "name"); err != nil {
-		gm.Name = ""
-	}
-	gm.TeamId = tm.UUID
-	if gm.Description, err = db.bolt.GetValue(gamePath, "description"); err != nil {
-		gm.Description = ""
-	}
-	if gm.Link, err = db.bolt.GetValue(gamePath, "link"); err != nil {
-		gm.Link = ""
-	}
-	gm.Screenshots = tm.getScreenshots()
-	return gm
-}
-
-// Screenshots are saved as base64 encoded pngs
-func (tm *Team) saveScreenshot(ss *Screenshot) error {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	ssPath := []string{"teams", tm.UUID, "game", "screenshots"}
-	// Generate a UUID for this screenshot
-	uuid := uuid.New()
-	ssPath = append(ssPath, uuid)
-	if err := db.bolt.MkBucketPath(ssPath); err != nil {
-		return err
-	}
-	if err := db.bolt.SetValue(ssPath, "description", ss.Description); err != nil {
-		return err
-	}
-	if err := db.bolt.SetValue(ssPath, "image", ss.Image); err != nil {
-		return err
-	}
-	if err := db.bolt.SetValue(ssPath, "thumbnail", ss.Thumbnail); err != nil {
-		return err
-	}
-	if err := db.bolt.SetValue(ssPath, "filetype", ss.Filetype); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (tm *Team) deleteScreenshot(ssId string) error {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	ssPath := []string{"teams", tm.UUID, "game", "screenshots"}
-	return db.bolt.DeleteBucket(ssPath, ssId)
-}
-
-func (tm *Team) getTeamMember(mbrId string) *TeamMember {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	mbr := new(TeamMember)
-	mbr.UUID = mbrId
-	teamMbrPath := []string{"teams", tm.UUID, "members", mbr.UUID}
-	if mbr.Name, err = db.bolt.GetValue(teamMbrPath, "name"); err != nil {
-		return nil
-	}
-	if mbr.SlackId, err = db.bolt.GetValue(teamMbrPath, "slackid"); err != nil {
-		return nil
-	}
-	if mbr.Twitter, err = db.bolt.GetValue(teamMbrPath, "twitter"); err != nil {
-		return nil
-	}
-	if mbr.Email, err = db.bolt.GetValue(teamMbrPath, "email"); err != nil {
-		return nil
-	}
-	return mbr
 }
 
 func (tm *Team) getTeamMembers() []TeamMember {

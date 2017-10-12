@@ -15,6 +15,15 @@ type Client struct {
 	Auth bool
 	Name string
 	IP   string
+
+	mPath []string // The path in the DB to this client
+}
+
+func NewClient(id string) *Client {
+	return &Client{
+		UUID:  id,
+		mPath: []string{"clients", id},
+	}
 }
 
 // Load all clients
@@ -26,7 +35,8 @@ func (m *model) LoadAllClients() []Client {
 	defer m.closeDB()
 
 	var clientUids []string
-	if clientUids, err = m.bolt.GetBucketList([]string{"clients"}); err != nil {
+	cliPath := []string{"clients"}
+	if clientUids, err = m.bolt.GetBucketList(cliPath); err != nil {
 		return err
 	}
 	for _, v := range clientUids {
@@ -44,11 +54,10 @@ func (m *model) LoadClient(clId string) *Client {
 	}
 	defer m.closeDB()
 
-	cl := new(Client)
-	cl.UUID = id
-	cl.Auth, _ = m.bolt.GetBool([]string{"clients", id}, "auth")
-	cl.Name, _ = m.bolt.GetValue([]string{"clients", id}, "name")
-	cl.IP, _ = m.bolt.GetValue([]string{"clients", id}, "ip")
+	cl := NewClient(clId)
+	cl.Auth, _ = m.bolt.GetBool(cl.mPath, "auth")
+	cl.Name, _ = m.bolt.GetValue(cl.mPath, "name")
+	cl.IP, _ = m.bolt.GetValue(cl.mPath, "ip")
 	return cl
 }
 
@@ -61,25 +70,25 @@ func (m *model) getClientById(ip string) *Client {
 	return nil
 }
 
+func (m *model) SaveClient(cl *Client) error {
+	var err error
+	if err = m.openDB(); err != nil {
+		return nil
+	}
+	defer m.closeDB()
+
+	if err = db.bolt.SetBool(cl.mPath, "auth", c.Auth); err != nil {
+		return err
+	}
+	if err = db.bolt.SetValue(cl.mPath, "name", c.Name); err != nil {
+		return err
+	}
+	return db.bolt.SetValue(cl.mPath, "ip", c.IP)
+}
+
 /**
  * OLD FUNCTIONS
  */
-func (c *Client) save() error {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	if err = db.bolt.SetBool([]string{"clients", c.UUID}, "auth", c.Auth); err != nil {
-		return err
-	}
-	if err = db.bolt.SetValue([]string{"clients", c.UUID}, "name", c.Name); err != nil {
-		return err
-	}
-	return db.bolt.SetValue([]string{"clients", c.UUID}, "ip", c.IP)
-}
-
 func (c *Client) saveVote(timestamp time.Time, votes []string) error {
 	var err error
 	if err = db.open(); err != nil {

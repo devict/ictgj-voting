@@ -1,7 +1,5 @@
 package main
 
-import "errors"
-
 /**
  * Game
  * A team's game, including links, description, and screenshots
@@ -12,6 +10,25 @@ type Game struct {
 	Link        string
 	Description string
 	Screenshots []Screenshot
+
+	mPath []string // The path in the DB to this game
+}
+
+// Create a new game object
+func NewGame(tmId string) *Game {
+	return &Game{
+		TeamId: tmId,
+		mPath:  []string{"jam", "teams", tmId, "game"},
+	}
+}
+
+func (gm *Game) GetScreenshot(ssId string) *Screenshot {
+	for _, ss := range gm.Screenshots {
+		if ss.UUID == ssId {
+			return ss
+		}
+	}
+	return nil
 }
 
 type Screenshot struct {
@@ -20,6 +37,16 @@ type Screenshot struct {
 	Image       string
 	Thumbnail   string
 	Filetype    string
+
+	mPath []string // The path in the DB to this screenshot
+}
+
+// Create a Screenshot Object
+func NewScreenshot(tmId, ssId string) *Screenshot {
+	return &Screenshot{
+		UUID:  ssId,
+		mPath: []string{"jam", "teams", tmId, "game", "screenshots", ssId},
+	}
 }
 
 // Load a team's game from the DB and return it
@@ -30,16 +57,14 @@ func (gj *Gamejam) LoadTeamGame(tmId string) *Game {
 	}
 	defer gj.m.closeDB()
 
-	gamePath := []string{"jam", "teams", tmId, "game"}
-	gm := new(Game)
-	gm.TeamId = tm.UUID
-	if gm.Name, err = gj.m.bolt.GetValue(gamePath, "name"); err != nil {
+	gm := NewGame(tmId)
+	if gm.Name, err = gj.m.bolt.GetValue(gm.mPath, "name"); err != nil {
 		gm.Name = ""
 	}
-	if gm.Description, err = gj.m.bolt.GetValue(gamePath, "description"); err != nil {
+	if gm.Description, err = gj.m.bolt.GetValue(gm.mPath, "description"); err != nil {
 		gm.Description = ""
 	}
-	if gm.Link, err = gj.m.bolt.GetValue(gamePath, "link"); err != nil {
+	if gm.Link, err = gj.m.bolt.GetValue(gm.mPath, "link"); err != nil {
 		gm.Link = ""
 	}
 	// Now get the game screenshots
@@ -48,6 +73,7 @@ func (gj *Gamejam) LoadTeamGame(tmId string) *Game {
 	return &gm
 }
 
+// Load a games screenshots from the DB
 func (gj *Gamejam) LoadTeamGameScreenshots(tmId string) []Screenshot {
 	var err error
 	if err = gj.m.openDB(); err != nil {
@@ -56,7 +82,8 @@ func (gj *Gamejam) LoadTeamGameScreenshots(tmId string) []Screenshot {
 	defer gj.m.closeDB()
 
 	var ret []Screenshot
-	ssBktPath := []string{"jam", "teams", tmId, "game", "screenshots"}
+	gm := NewGame(tmId)
+	ssBktPath := append(gm.mPath, "screenshots")
 	var ssIds []string
 	ssIds, _ = gj.m.bolt.GetBucketList(ssBktPath)
 	for _, v := range ssIds {
@@ -68,6 +95,7 @@ func (gj *Gamejam) LoadTeamGameScreenshots(tmId string) []Screenshot {
 	return ret
 }
 
+// Load a screenshot from the DB
 func (gj *Gamejam) LoadTeamGameScreenshot(tmId, ssId string) *Screenshot {
 	var err error
 	if err = gj.m.openDB(); err != nil {
@@ -75,87 +103,121 @@ func (gj *Gamejam) LoadTeamGameScreenshot(tmId, ssId string) *Screenshot {
 	}
 	defer gj.m.closeDB()
 
-	var ret []Screenshot
-	ssPath := []string{"jam", "teams", tmId, "game", "screenshots", ssId}
-	ret := new(Screenshot)
-	ret.UUID = ssId
-	if ret.Description, err = gj.m.bolt.GetValue(ssPath, "description"); err != nil {
+	ret := NewScreenshot(tmId, ssId)
+	if ret.Description, err = gj.m.bolt.GetValue(ret.mPath, "description"); err != nil {
 		return nil
 	}
-	if ret.Image, err = gj.m.bolt.GetValue(ssPath, "image"); err != nil {
+	if ret.Image, err = gj.m.bolt.GetValue(ret.mPath, "image"); err != nil {
 		return nil
 	}
-	if ret.Thumbnail, err = gj.m.bolt.GetValue(ssPath, "thumbnail"); err != nil {
+	if ret.Thumbnail, err = gj.m.bolt.GetValue(ret.mPath, "thumbnail"); err != nil {
 		return nil
 	}
 	if ret.Thumbnail == "" {
 		ret.Thumbnail = ret.Image
 	}
-	if ret.Filetype, err = gj.m.bolt.GetValue(ssPath, "filetype"); err != nil {
+	if ret.Filetype, err = gj.m.bolt.GetValue(ret.mPath, "filetype"); err != nil {
 		return nil
 	}
 	return ret
 }
 
-/**
- * OLD FUNCTIONS
- */
-
-// Create a new game object, must have a valid team id
-func (db *currJamDb) newGame(tmId string) *Game {
+// Save a game to the given model's DB
+func (gj *Gamejam) SaveGame(gm *Game) error {
+	//func (gm *Game) save(m *model) error {
 	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	tm := db.getTeam(tmId)
-	if tm == nil {
-		return nil
-	}
-	return &Game{TeamId: tmId}
-}
-
-func (db *currJamDb) getAllGames() []Game {
-	var ret []Game
-	tms := db.getAllTeams()
-	for i := range tms {
-		ret = append(ret, *tms[i].getGame())
-	}
-	return ret
-}
-
-func (gm *Game) save() error {
-	var err error
-	if err = db.open(); err != nil {
+	if err = gj.m.openDB(); err != nil {
 		return err
 	}
-	defer db.close()
+	defer gj.m.closeDB()
 
-	tm := db.getTeam(gm.TeamId)
-	if tm == nil {
-		return errors.New("Invalid Team: " + gm.TeamId)
-	}
-	gamePath := []string{"teams", gm.TeamId, "game"}
-	if err := db.bolt.MkBucketPath(gamePath); err != nil {
+	/*
+		tm := gj.getTeam(gm.TeamId)
+		if tm == nil {
+			return errors.New("Invalid Team: " + gm.TeamId)
+		}
+	*/
+	if err := gj.m.bolt.MkBucketPath(gm.mPath); err != nil {
 		return err
 	}
 
 	if gm.Name == "" {
 		gm.Name = tm.Name + "'s Game"
 	}
-	if err := db.bolt.SetValue(gamePath, "name", gm.Name); err != nil {
+	if err := gj.m.bolt.SetValue(gm.mPath, "name", gm.Name); err != nil {
 		return err
 	}
-	if err := db.bolt.SetValue(gamePath, "link", gm.Link); err != nil {
+	if err := gj.m.bolt.SetValue(gm.mPath, "link", gm.Link); err != nil {
 		return err
 	}
-	if err := db.bolt.SetValue(gamePath, "description", gm.Description); err != nil {
+	if err := gj.m.bolt.SetValue(gm.mPath, "description", gm.Description); err != nil {
 		return err
 	}
-	if err := db.bolt.MkBucketPath(append(gamePath, "screenshots")); err != nil {
+	if err := gj.m.bolt.MkBucketPath(append(gm.mPath, "screenshots")); err != nil {
 		return err
 	}
+	return gj.SaveScreenshots(gm)
+}
 
-	return err
+// Save all of the game's screenshots to the DB
+// Remove screenshots from the DB that aren't in the game object
+func (gj *Gamejam) SaveScreenshots(gm *Game) error {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	for _, ss := range gm.Screenshots {
+		if err = gj.SaveScreenshot(gm.TeamId, ss); err != nil {
+			return err
+		}
+	}
+	// Now remove unused screenshots
+	ssPath := append(gm.mPath, "screenshots")
+	if ssIds, err = gj.m.bolt.GetBucketList(ssPath); err != nil {
+		return err
+	}
+	for i := range ssIds {
+		if gm.GetScreenshot(ssIds[i]) == nil {
+			if err = gj.DeleteScreenshot(NewScreenshot(tm.TeamId, ssIds[i])); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// Save a screenshot
+func (gj *Gamejam) SaveScreenshot(tmId string, ss *Screenshot) error {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	if err = gj.m.bolt.MkBucketPath(ss.mPath); err != nil {
+		return err
+	}
+	if err = gj.m.bolt.SetValue(ss.mPath, "description", ss.Description); err != nil {
+		return err
+	}
+	if err = gj.m.bolt.SetValue(ss.mPath, "image", ss.Image); err != nil {
+		return err
+	}
+	if err = gj.m.bolt.SetValue(ss.mPath, "filetype", ss.Filetype); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete a screenshot
+func (gj *Gamejam) DeleteScreenshot(ss *Screenshot) error {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return nil
+	}
+	defer gj.m.closeDB()
+
+	ssPath := ss.mPath[:len(ss.mPath)-1]
+	return gj.m.bolt.DeleteBucket(ssPath, ss.UUID)
 }

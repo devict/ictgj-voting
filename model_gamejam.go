@@ -13,13 +13,15 @@ type Gamejam struct {
 	Teams []Team
 	Votes []Vote
 
-	m       *model
+	m       *model   // The model that holds this gamejam's data
+	mPath   []string // The path in the db to this gamejam
 	updates []string
 }
 
 func NewGamejam(m *model) *Gamejam {
 	gj := new(Gamejam)
 	gj.m = m
+	gj.mPath = []string{"jam"}
 	return gj
 }
 
@@ -30,9 +32,8 @@ func (m *model) LoadCurrentJam() *Gamejam {
 	defer m.closeDB()
 
 	var err error
-	jamPath := []string{"jam"}
 	gj := NewGamejam(m)
-	gj.Name, _ = m.bolt.GetValue(jamPath, "name")
+	gj.Name, _ = m.bolt.GetValue(gj.mPath, "name")
 
 	// Load all teams
 	gj.Teams = gj.LoadAllTeams()
@@ -57,10 +58,10 @@ func (gj *Gamejam) needsSave() bool {
 }
 
 func (gj *Gamejam) saveToDB() error {
-	if err := s.m.openDB(); err != nil {
+	if err := gj.m.openDB(); err != nil {
 		return err
 	}
-	defer s.m.closeDB()
+	defer gj.m.closeDB()
 
 	for i := range updates {
 		// TODO: Save
