@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 /**
  * Game
  * A team's game, including links, description, and screenshots
@@ -48,6 +50,11 @@ func NewScreenshot(tmId, ssId string) *Screenshot {
 		mPath: []string{"jam", "teams", tmId, "game", "screenshots", ssId},
 	}
 }
+
+/**
+ * DB Functions
+ * These are generally just called when the app starts up, or when the periodic 'save' runs
+ */
 
 // Load a team's game from the DB and return it
 func (gj *Gamejam) LoadTeamGame(tmId string) *Game {
@@ -122,21 +129,14 @@ func (gj *Gamejam) LoadTeamGameScreenshot(tmId, ssId string) *Screenshot {
 	return ret
 }
 
-// Save a game to the given model's DB
+// Save a game to the DB
 func (gj *Gamejam) SaveGame(gm *Game) error {
-	//func (gm *Game) save(m *model) error {
 	var err error
 	if err = gj.m.openDB(); err != nil {
 		return err
 	}
 	defer gj.m.closeDB()
 
-	/*
-		tm := gj.getTeam(gm.TeamId)
-		if tm == nil {
-			return errors.New("Invalid Team: " + gm.TeamId)
-		}
-	*/
 	if err := gj.m.bolt.MkBucketPath(gm.mPath); err != nil {
 		return err
 	}
@@ -220,4 +220,21 @@ func (gj *Gamejam) DeleteScreenshot(ss *Screenshot) error {
 
 	ssPath := ss.mPath[:len(ss.mPath)-1]
 	return gj.m.bolt.DeleteBucket(ssPath, ss.UUID)
+}
+
+/**
+ * In Memory functions
+ * This is generally how the app accesses client data
+ */
+
+// Set the given team's game to gm
+func (gj *Gamejam) UpdateGame(tmId string, gm *Game) error {
+	var found bool
+	tm := gj.GetTeamById(tmId)
+	if tm == nil {
+		return errors.New("Invalid team ID: " + gm.TeamId)
+	}
+	tm.Game = gm
+	gj.NeedsUpdate([]string{"team", tmId, "game"})
+	return nil
 }

@@ -17,13 +17,6 @@ type model struct {
 	clients []Client  // Web clients that have connected to the server
 }
 
-// Authentication Modes: Flags for which clients are able to vote
-const (
-	AuthModeAuthentication = iota
-	AuthModeAll
-	AuthModeError
-)
-
 // Update Flags: Which parts of the model need to be updated
 const (
 	UpdateSiteData = iota
@@ -119,6 +112,11 @@ func (m *model) saveChanges() error {
 	}
 	if m.jam.needsSave() {
 		if err = m.jam.saveToDB(); err != nil {
+			return err
+		}
+	}
+	if m.clientsUpdated {
+		if err = m.SaveAllClients(); err != nil {
 			return err
 		}
 	}

@@ -11,29 +11,28 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 	vars := mux.Vars(req)
 	page.SubTitle = "Clients"
 	clientId := vars["id"]
-	client := db.getClient(clientId)
+	client := m.GetClient(clientId)
 	clientIp, _, _ := net.SplitHostPort(req.RemoteAddr)
 	if clientId == "" {
 		type clientsPageData struct {
 			Clients []Client
 		}
-		page.TemplateData = clientsPageData{Clients: db.getAllClients()}
+		page.TemplateData = clientsPageData{Clients: m.clients}
 		page.SubTitle = "Clients"
 		page.show("admin-clients.html", w)
 	} else {
 		switch vars["function"] {
 		case "add":
 			page.SubTitle = "Authenticate Client"
-			cli := db.getClient(clientId)
-			if cli.IP == "" {
-				cli.IP = clientIp
+			if client.IP == "" {
+				client.IP = clientIp
 			}
 			type actClientPageData struct {
 				Id   string
 				Ip   string
 				Name string
 			}
-			page.TemplateData = actClientPageData{Id: cli.UUID, Ip: cli.IP, Name: cli.Name}
+			page.TemplateData = actClientPageData{Id: client.UUID, Ip: client.IP, Name: client.Name}
 			page.show("admin-activateclient.html", w)
 		case "auth":
 			email := req.FormValue("email")
@@ -44,16 +43,13 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 				client.Name = clientName
 			}
 			client.IP = clientIp
-			client.save()
+			m.UpdateClient(client)
 			if page.LoggedIn || doLogin(email, password) == nil {
 				// Received a valid login
 				// Authenticate the client
 				client.Auth = true
-				if client.save() == nil {
-					page.session.setFlashMessage("Client Authenticated", "success")
-				} else {
-					page.session.setFlashMessage("Client Authentication Failed", "error")
-				}
+				m.UpdateClient(client)
+				page.session.setFlashMessage("Client Authenticated", "success")
 				if page.LoggedIn {
 					redirect("/admin/clients", w, req)
 				}
@@ -61,11 +57,8 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 			redirect("/", w, req)
 		case "deauth":
 			client.Auth = false
-			if client.save() == nil {
-				page.session.setFlashMessage("Client De-Authenticated", "success")
-			} else {
-				page.session.setFlashMessage("Client De-Authentication Failed", "success")
-			}
+			m.UpdateClient(client)
+			page.session.setFlashMessage("Client De-Authenticated", "success")
 			redirect("/admin/clients", w, req)
 		}
 	}

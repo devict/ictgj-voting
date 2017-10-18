@@ -20,24 +20,25 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 	teamId := vars["id"]
 	if teamId == "" {
 		// Games List
+		// TODO: We should be able to just pass m.jam to the template instead of a custom struct
 		type gamesPageData struct {
 			Teams []Team
 		}
 		gpd := new(gamesPageData)
-		gpd.Teams = db.getAllTeams()
+		gpd.Teams = m.jam.Teams
 		page.TemplateData = gpd
 		page.SubTitle = "Games"
 		page.show("admin-games.html", w)
 	} else {
-		tm := db.getTeam(teamId)
+		tm := m.jam.GetTeamById(teamId)
 		if tm != nil {
 			switch vars["function"] {
 			case "save":
-				gm := db.newGame(tm.UUID)
+				gm := NewGame(tm.UUID)
 				gm.Name = req.FormValue("gamename")
 				gm.Link = req.FormValue("gamelink")
 				gm.Description = req.FormValue("gamedesc")
-				if err := gm.save(); err != nil {
+				if err := m.jam.UpdateGame(tm.UUID, gm); err != nil {
 					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("Team game updated", "success")

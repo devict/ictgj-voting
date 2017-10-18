@@ -1,10 +1,6 @@
 package main
 
-import (
-	"errors"
-
-	"github.com/pborman/uuid"
-)
+import "errors"
 
 /**
  * Team
@@ -32,6 +28,8 @@ type TeamMember struct {
 	SlackId string
 	Twitter string
 	Email   string
+
+	mPath []string // The path in the DB to this team member
 }
 
 // Create a new team member
@@ -41,6 +39,11 @@ func NewTeamMember(tmId, uId string) *TeamMember {
 		mPath: []string{"jam", "teams", tmId, "members", uId},
 	}
 }
+
+/**
+ * DB Functions
+ * These are generally just called when the app starts up, or when the periodic 'save' runs
+ */
 
 // LoadAllTeams loads all teams for the jam out of the database
 func (gj *Gamejam) LoadAllTeams() []Team {
@@ -164,229 +167,58 @@ func (gj *Gamejam) SaveTeam(tm *Team) error {
 	}
 
 	// Save team game
-	if err = gj.m.bolt.SetValue(tm.
-
+	return gj.SaveGame(gm)
 }
 
+// Delete the team tm
+func (gj *Gamejam) DeleteTeam(tm *Team) error {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	if len(tm.mPath) < 2 {
+		return errors.New("Invalid team path: " + string(tm.mPath))
+	}
+	return gj.m.bolt.DeleteBucket(tm.mPath[:len(tm.mPath)-1], tm.UUID)
+}
+
+// Delete the TeamMember mbr from Team tm
+func (gj *Gamejam) DeleteTeamMember(tm *Team, mbr *TeamMember) error {
+	var err error
+	if err = gj.m.openDB(); err != nil {
+		return err
+	}
+	defer gj.m.closeDB()
+
+	if len(mbr.mPath) < 2 {
+		return errors.New("Invalid team path: " + string(tm.mPath))
+	}
+	return gj.m.bolt.DeleteBucket(mbr.mPath[:len(mbr.mPath)-1], mbr.UUID)
+}
 
 /**
- * OLD FUNCTIONS
+ * In Memory functions
+ * This is generally how the app accesses data
  */
 
-// NewTeam creates a team with name nm and stores it in the DB
-func NewTeam(nm string) error {
-	var err error
-	if err = db.open(); err != nil {
-		return err
-	}
-	defer db.close()
-
-	// Generate a UUID
-	uuid := uuid.New()
-	teamPath := []string{"teams", uuid}
-
-	if err := db.bolt.MkBucketPath(teamPath); err != nil {
-		return err
-	}
-	if err := db.bolt.SetValue(teamPath, "name", nm); err != nil {
-		return err
-	}
-	if err := db.bolt.MkBucketPath(append(teamPath, "members")); err != nil {
-		return err
-	}
-	gamePath := append(teamPath, "game")
-	if err := db.bolt.MkBucketPath(gamePath); err != nil {
-		return err
-	}
-	if err := db.bolt.SetValue(append(gamePath), "name", ""); err != nil {
-		return err
-	}
-	return db.bolt.MkBucketPath(append(gamePath, "screenshots"))
-}
-
-// getTeam returns a team with the given id, or nil
-func (db *currJamDb) getTeam(id string) *Team {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	teamPath := []string{"teams", id}
-	tm := new(Team)
-	tm.UUID = id
-	if tm.Name, err = db.bolt.GetValue(teamPath, "name"); err != nil {
-		return nil
-	}
-	tm.Members = tm.getTeamMembers()
-	tm.Game = tm.getGame()
-	return tm
-}
-
-// This function returns the team for a specific member
-func (db *currJamDb) getTeamForMember(mbrid string) (*Team, error) {
-	var err error
-	if err = db.open(); err != nil {
-		return nil, err
-	}
-	defer db.close()
-
-	teams := db.getAllTeams()
-	for i := range teams {
-		var tmMbrs []TeamMember
-		tmMbrs = teams[i].getTeamMembers()
-		if err == nil {
-			for j := range tmMbrs {
-				if tmMbrs[j].UUID == mbrid {
-					return &teams[i], nil
-				}
-			}
-		}
-	}
-	return nil, errors.New("Unable to find team member")
-}
-
-// getAllTeams returns all teams in the database
-func (db *currJamDb) getAllTeams() []Team {
-	var ret []Team
-	var err error
-	if err = db.open(); err != nil {
-		return ret
-	}
-	defer db.close()
-
-	teamPath := []string{"teams"}
-	var teamUids []string
-	if teamUids, err = db.bolt.GetBucketList(teamPath); err != nil {
-		return ret
-	}
-	for _, v := range teamUids {
-		if tm := db.getTeam(v); tm != nil {
-			ret = append(ret, *tm)
-		}
-	}
-	return ret
-}
-
-// getTeamByName returns a team with the given name or nil
-func (db *currJamDb) getTeamByName(nm string) *Team {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-
-	teamPath := []string{"teams"}
-	var teamUids []string
-	if teamUids, err = db.bolt.GetBucketList(teamPath); err != nil {
-		for _, v := range teamUids {
-			var name string
-			if name, err = db.bolt.GetValue(append(teamPath, v), "name"); name == nm {
-				return db.getTeam(v)
-			}
+// Find a team by it's ID
+func (gj *Gamejam) GetTeamById(id string) *Team {
+	for i := range gj.Teams {
+		if gj.Teams[i].UUID == id {
+			return gj.Teams[i]
 		}
 	}
 	return nil
 }
 
-// save saves the team to the db
-func (tm *Team) save() error {
-	var err error
-	if err = db.open(); err != nil {
-		return err
-	}
-	defer db.close()
-
-	teamPath := []string{"teams", tm.UUID}
-	if err = db.bolt.SetValue(teamPath, "name", tm.Name); err != nil {
-		return err
-	}
-
-	// TODO: Save Team Members
-	// TODO: Save Team Game
-	return nil
-}
-
-// delete removes the team from the database
-func (tm *Team) delete() error {
-	var err error
-	if err = db.open(); err != nil {
-		return err
-	}
-	defer db.close()
-
-	teamPath := []string{"teams"}
-	return db.bolt.DeleteBucket(teamPath, tm.UUID)
-}
-
-func (tm *Team) getTeamMembers() []TeamMember {
-	var ret []TeamMember
-	var err error
-	if err = db.open(); err != nil {
-		return ret
-	}
-	defer db.close()
-
-	teamPath := []string{"teams", tm.UUID, "members"}
-	var memberUuids []string
-	if memberUuids, err = db.bolt.GetBucketList(teamPath); err == nil {
-		for _, v := range memberUuids {
-			var mbr *TeamMember
-			if mbr = tm.getTeamMember(v); mbr != nil {
-				ret = append(ret, *mbr)
-			}
+// Find a team by name
+func (gj *Gamejam) GetTeamByName(nm string) *Team {
+	for i := range gj.Teams {
+		if gj.Teams[i].Name == nm {
+			return gj.Teams[i]
 		}
 	}
-	return ret
-}
-
-func (tm *Team) updateTeamMember(mbr *TeamMember) error {
-	var err error
-	if err = db.open(); err != nil {
-		return err
-	}
-	defer db.close()
-
-	if mbr.UUID == "" {
-		mbrs := tm.getTeamMembers()
-		if len(mbrs) > 0 {
-			for i := range mbrs {
-				if mbrs[i].Name == mbr.Name {
-					mbr.UUID = mbrs[i].UUID
-					break
-				}
-			}
-		}
-	}
-	if mbr.UUID == "" {
-		// It's really a new one
-		mbr.UUID = uuid.New()
-	}
-
-	mbrPath := []string{"teams", tm.UUID, "members", mbr.UUID}
-	if db.bolt.SetValue(mbrPath, "name", mbr.Name) != nil {
-		return err
-	}
-	if db.bolt.SetValue(mbrPath, "slackid", mbr.SlackId) != nil {
-		return err
-	}
-	if db.bolt.SetValue(mbrPath, "twitter", mbr.Twitter) != nil {
-		return err
-	}
-	if db.bolt.SetValue(mbrPath, "email", mbr.Email) != nil {
-		return err
-	}
 	return nil
-}
-
-// deleteTeamMember removes a member from the database
-func (tm *Team) deleteTeamMember(mbr *TeamMember) error {
-	var err error
-	if err = db.open(); err != nil {
-		return err
-	}
-	defer db.close()
-
-	teamPath := []string{"teams", tm.UUID, "members"}
-	return db.bolt.DeleteBucket(teamPath, mbr.UUID)
 }

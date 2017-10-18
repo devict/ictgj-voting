@@ -1,11 +1,5 @@
 package main
 
-import (
-	"strconv"
-	"strings"
-	"time"
-)
-
 /**
  * Client
  * A client is a system that is connecting to the web server
@@ -26,24 +20,31 @@ func NewClient(id string) *Client {
 	}
 }
 
-// Load all clients
+/**
+ * DB Functions
+ * These are generally just called when the app starts up, or when the periodic 'save' runs
+ */
+
+// Load all clients from the DB
 func (m *model) LoadAllClients() []Client {
 	var err error
+	var ret []Client
 	if err = m.openDB(); err != nil {
-		return err
+		return ret
 	}
 	defer m.closeDB()
 
 	var clientUids []string
 	cliPath := []string{"clients"}
 	if clientUids, err = m.bolt.GetBucketList(cliPath); err != nil {
-		return err
+		return ret
 	}
 	for _, v := range clientUids {
 		if cl := m.LoadClient(v); cl != nil {
-			m.clients = append(m.clients, *cl)
+			ret = append(ret, *cl)
 		}
 	}
+	return ret
 }
 
 // Load a client from the DB and return it
@@ -61,15 +62,23 @@ func (m *model) LoadClient(clId string) *Client {
 	return cl
 }
 
-func (m *model) getClientById(ip string) *Client {
-	for i := range m.clients {
-		if m.clients[i].IP == ip {
-			return &m.clients[i].IP
+// SaveAllClients saves all clients to the DB
+func (m *model) SaveAllClients() error {
+	var err error
+	if err = m.openDB(); err != nil {
+		return nil
+	}
+	defer m.closeDB()
+
+	for _, v := range m.clients {
+		if err = m.SaveClient(v); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
+// SaveClient saves a client to the DB
 func (m *model) SaveClient(cl *Client) error {
 	var err error
 	if err = m.openDB(); err != nil {
@@ -87,20 +96,43 @@ func (m *model) SaveClient(cl *Client) error {
 }
 
 /**
- * OLD FUNCTIONS
+ * In Memory functions
+ * This is generally how the app accesses client data
  */
-func (c *Client) saveVote(timestamp time.Time, votes []string) error {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-	// Make sure we don't clobber a duplicate vote
-	votesBkt := []string{"votes", c.UUID, timestamp.Format(time.RFC3339)}
-	for i := range votes {
-		if strings.TrimSpace(votes[i]) != "" {
-			db.bolt.SetValue(votesBkt, strconv.Itoa(i), votes[i])
+
+// Return a client by it's UUID
+func (m *model) GetClient(id string) *Client {
+	for i := range m.clients {
+		if m.clients[i].UUID == id {
+			return &m.clients[i]
 		}
 	}
-	return err
+	return nil
+}
+
+// Return a client by it's IP address
+func (m *model) GetClientByIp(ip string) *Client {
+	for i := range m.clients {
+		if m.clients[i].IP == ip {
+			return &m.clients[i]
+		}
+	}
+	return nil
+}
+
+// Add/Update a client in the data model
+func (m *model) UpdateClient(cl *Client) {
+	var found bool
+	for i := range m.clients {
+		if m.clients[i].UUID == cl.UUID {
+			found = true
+			m.clients[i].Auth = cl.Auth
+			m.clients[i].Name = cl.Name
+			m.clients[i].IP = cl.IP
+		}
+	}
+	if !found {
+		m.clients = append(m.clients, cl)
+	}
+	m.clientsUpdated = true
 }

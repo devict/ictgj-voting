@@ -71,21 +71,3 @@ func (gj *Gamejam) LoadVote(clientId, tm string) *Vote {
 	}
 	return &vt
 }
-
-/**
- * OLD FUNCTIONS
- */
-func (db *currJamDb) getAllVotes() []Vote {
-	var ret []Vote
-	var err error
-	if err = db.open(); err != nil {
-		return ret
-	}
-	defer db.close()
-
-	clients := db.getAllClients()
-	for _, cl := range clients {
-		ret = append(ret, cl.getVotes()...)
-	}
-	return ret
-}

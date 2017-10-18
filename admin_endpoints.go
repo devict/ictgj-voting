@@ -62,8 +62,8 @@ func handleAdminSetMode(w http.ResponseWriter, req *http.Request, page *pageData
 	if err != nil {
 		page.session.setFlashMessage("Invalid Mode: "+vars["id"], "error")
 	}
-	if db.setPublicSiteMode(newMode) != nil {
-		page.session.setFlashMessage("Invalid Mode: "+vars["id"], "error")
+	if err = m.site.SetPublicMode(newMode); err != nil {
+		page.session.setFlashMessage(err.Error(), "error")
 	}
 	redirect("/admin", w, req)
 }
@@ -74,8 +74,8 @@ func handleAdminSetAuthMode(w http.ResponseWriter, req *http.Request, page *page
 	if err != nil {
 		page.session.setFlashMessage("Invalid Authentication Mode: "+vars["id"], "error")
 	}
-	if db.site.setAuthMode(newMode) != nil {
-		page.session.setFlashMessage("Invalid Authentication Mode: "+vars["id"], "error")
+	if err = m.site.SetAuthMode(newMode); err != nil {
+		page.session.setFlashMessage(err.Error(), "error")
 	}
 	redirect("/admin", w, req)
 }
