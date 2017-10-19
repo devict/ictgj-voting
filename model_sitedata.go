@@ -1,16 +1,19 @@
 package main
 
-import "strconv"
+import (
+	"errors"
+	"strconv"
+)
 
 /**
  * SiteData
  * Contains configuration for the website
  */
 type siteData struct {
-	title       string
-	port        int
-	sessionName string
-	serverDir   string
+	Title       string
+	Port        int
+	SessionName string
+	ServerDir   string
 	authMode    int
 	publicMode  int
 
@@ -62,10 +65,10 @@ func (s *siteData) LoadFromDB() error {
 	if port, err := s.m.bolt.GetInt(s.mPath, "port"); err == nil {
 		s.Port = port
 	}
-	if sessionName, err = s.m.bolt.GetValue(s.mPath, "session-name"); err == nil {
+	if sessionName, err := s.m.bolt.GetValue(s.mPath, "session-name"); err == nil {
 		s.SessionName = sessionName
 	}
-	if serverDir, err = s.m.bolt.GetValue(s.mPath, "server-dir"); err == nil {
+	if serverDir, err := s.m.bolt.GetValue(s.mPath, "server-dir"); err == nil {
 		s.ServerDir = serverDir
 	}
 	s.changed = false
@@ -79,7 +82,8 @@ func (s *siteData) NeedsSave() bool {
 
 // Save the site data into the DB
 func (s *siteData) SaveToDB() error {
-	if err := s.m.openDB(); err != nil {
+	var err error
+	if err = s.m.openDB(); err != nil {
 		return err
 	}
 	defer s.m.closeDB()
@@ -108,12 +112,13 @@ func (s *siteData) GetAuthMode() int {
 // Set the auth mode
 func (s *siteData) SetAuthMode(mode int) error {
 	if mode < AuthModeAuthentication || mode >= AuthModeError {
-		return errors.Error("Invalid Authentication Mode: " + strconv.Itoa(mode))
+		return errors.New("Invalid Authentication Mode: " + strconv.Itoa(mode))
 	}
 	if mode != s.authMode {
 		s.authMode = mode
 		s.changed = true
 	}
+	return nil
 }
 
 // Return the public site mode
@@ -124,10 +129,11 @@ func (s *siteData) GetPublicMode() int {
 // Set the public site mode
 func (s *siteData) SetPublicMode(mode int) error {
 	if mode < SiteModeWaiting || mode >= SiteModeError {
-		return errors.Error("Invalid Public Mode: " + strconv.Itoa(mode))
+		return errors.New("Invalid Public Mode: " + strconv.Itoa(mode))
 	}
 	if mode != s.publicMode {
 		s.publicMode = mode
 		s.changed = true
 	}
+	return nil
 }

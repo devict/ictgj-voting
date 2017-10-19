@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"errors"
+	"strings"
+	"time"
+)
 
 /**
  * Gamejam
@@ -13,9 +17,10 @@ type Gamejam struct {
 	Teams []Team
 	Votes []Vote
 
-	m       *model   // The model that holds this gamejam's data
-	mPath   []string // The path in the db to this gamejam
-	changed bool     // Flag to tell if we need to update the db
+	m     *model   // The model that holds this gamejam's data
+	mPath []string // The path in the db to this gamejam
+
+	IsChanged bool // Flag to tell if we need to update the db
 }
 
 func NewGamejam(m *model) *Gamejam {
@@ -30,13 +35,12 @@ func NewGamejam(m *model) *Gamejam {
  * These are generally just called when the app starts up, or when the periodic 'save' runs
  */
 
-func (m *model) LoadCurrentJam() *Gamejam {
+func (m *model) LoadCurrentJam() (*Gamejam, error) {
 	if err := m.openDB(); err != nil {
-		return err
+		return nil, err
 	}
 	defer m.closeDB()
 
-	var err error
 	gj := NewGamejam(m)
 	gj.Name, _ = m.bolt.GetValue(gj.mPath, "name")
 
@@ -46,52 +50,37 @@ func (m *model) LoadCurrentJam() *Gamejam {
 	// Load all votes
 	gj.Votes = gj.LoadAllVotes()
 
-	return gj
+	return gj, nil
 }
 
 // Save everything to the DB whether it's flagged as changed or not
-func (gj *Gamejam) saveToDB() error {
+func (gj *Gamejam) SaveToDB() error {
 	if err := gj.m.openDB(); err != nil {
 		return err
 	}
 	defer gj.m.closeDB()
 
-}
-
-/**
- * In Memory functions
- * This is generally how the app accesses client data
- */
-func (gj *Gamejam) getTeamByUUID(uuid string) *Team {
-	for i := range gj.Teams {
-		if gj.Teams[i].UUID == uuid {
-			return &gj.Teams[i]
+	var errs []error
+	// Save all Teams
+	for _, tm := range gj.Teams {
+		if err := gj.SaveTeam(&tm); err != nil {
+			errs = append(errs, err)
 		}
+	}
+
+	// Save all Votes
+	for _, vt := range gj.Votes {
+		if err := gj.SaveVote(&vt); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		var errTxt string
+		for i := range errs {
+			errTxt = errTxt + errs[i].Error() + "\n"
+		}
+		errTxt = strings.TrimSpace(errTxt)
+		return errors.New("Error(s) saving to DB: " + errTxt)
 	}
 	return nil
-}
-
-// Check if pth is already in updates, if not, add it
-func (gj *Gamejam) NeedsUpdate(pth []string) {
-	var found bool
-	for _, v := range gj.updates {
-		if !(len(v) == len(pth)) {
-			continue
-		}
-		// The lengths are the same, do all elements match?
-		var nxt bool
-		for i := range pth {
-			if v[i] != pth[i] {
-				nxt = true
-			}
-		}
-		if !nxt {
-			// This pth is already in the 'updates' list
-			found = true
-			break
-		}
-	}
-	if !found {
-		gj.updates = append(gj.updates, pth)
-	}
 }

@@ -23,22 +23,22 @@ func getCondorcetResult() []Ranking {
 	}
 	var allPairs []teamPair
 	var ret []Ranking
-	for i := 0; i < len(site.Teams); i++ {
-		for j := i + 1; j < len(site.Teams); j++ {
+	for i := 0; i < len(m.jam.Teams); i++ {
+		for j := i + 1; j < len(m.jam.Teams); j++ {
 			// For each pairing find a winner
-			winner, pct, _ := findWinnerBetweenTeams(&site.Teams[i], &site.Teams[j])
+			winner, pct, _ := findWinnerBetweenTeams(&m.jam.Teams[i], &m.jam.Teams[j])
 			newPair := new(teamPair)
 			if winner != nil {
 				newPair.winner = winner
-				if winner.UUID == site.Teams[i].UUID {
-					newPair.loser = &site.Teams[j]
+				if winner.UUID == m.jam.Teams[i].UUID {
+					newPair.loser = &m.jam.Teams[j]
 				} else {
-					newPair.loser = &site.Teams[i]
+					newPair.loser = &m.jam.Teams[i]
 				}
 				newPair.majority = pct
 			} else {
-				newPair.winner = &site.Teams[i]
-				newPair.loser = &site.Teams[j]
+				newPair.winner = &m.jam.Teams[i]
+				newPair.loser = &m.jam.Teams[j]
 				newPair.majority = 50
 			}
 			allPairs = append(allPairs, *newPair)
@@ -46,8 +46,8 @@ func getCondorcetResult() []Ranking {
 	}
 	// initialize map of team wins
 	teamWins := make(map[string]int)
-	for i := range site.Teams {
-		teamWins[site.Teams[i].UUID] = 0
+	for i := range m.jam.Teams {
+		teamWins[m.jam.Teams[i].UUID] = 0
 	}
 	// Figure out how many wins each team has
 	for i := range allPairs {
@@ -72,7 +72,10 @@ func getCondorcetResult() []Ranking {
 		nR := new(Ranking)
 		nR.Rank = currRank
 		for i := range rankedWins[topWins] {
-			nR.Teams = append(nR.Teams, *site.getTeamByUUID(rankedWins[topWins][i]))
+			tm, _ := m.jam.GetTeamById(rankedWins[topWins][i])
+			if tm != nil {
+				nR.Teams = append(nR.Teams, *tm)
+			}
 		}
 		ret = append(ret, *nR)
 		delete(rankedWins, topWins)
@@ -99,7 +102,7 @@ func uuidIsInRankingSlice(uuid string, sl []Ranking) bool {
 func findWinnerBetweenTeams(tm1, tm2 *Team) (*Team, float32, error) {
 	// tally gets incremented for a tm1 win, decremented for a tm2 win
 	var tm1votes, tm2votes float32
-	for _, v := range site.Votes {
+	for _, v := range m.jam.Votes {
 		for _, chc := range v.Choices {
 			if chc.Team == tm1.UUID {
 				tm1votes++
@@ -138,12 +141,12 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 		Results  []Ranking
 	}
 	vpd := new(votePageData)
-	for i := range site.Votes {
+	for i := range m.jam.Votes {
 		v := new(vpdVote)
-		v.Timestamp = site.Votes[i].Timestamp.Format(time.RFC3339)
-		v.ClientId = site.Votes[i].ClientId
-		for _, choice := range site.Votes[i].Choices {
-			for _, fndTm := range site.Teams {
+		v.Timestamp = m.jam.Votes[i].Timestamp.Format(time.RFC3339)
+		v.ClientId = m.jam.Votes[i].ClientId
+		for _, choice := range m.jam.Votes[i].Choices {
+			for _, fndTm := range m.jam.Teams {
 				if fndTm.UUID == choice.Team {
 					v.Choices = append(v.Choices, fndTm)
 					break

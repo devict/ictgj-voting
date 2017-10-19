@@ -15,6 +15,8 @@ type model struct {
 	site    *siteData // Configuration data for the site
 	jam     *Gamejam  // The currently active gamejam
 	clients []Client  // Web clients that have connected to the server
+
+	clientsUpdated bool
 }
 
 // Update Flags: Which parts of the model need to be updated
@@ -39,20 +41,27 @@ func NewModel() (*model, error) {
 	}
 
 	// Load the site data
-	m.site = m.LoadSiteData()
+	m.site = NewSiteData(m)
+	if err = m.site.LoadFromDB(); err != nil {
+		// Error loading from the DB, set to defaults
+		def := NewSiteData(m)
+		m.site = def
+	}
 
 	// Load the jam data
-	m.jam = m.LoadCurrentJam()
+	if m.jam, err = m.LoadCurrentJam(); err != nil {
+		return nil, errors.New("Unable to load current jam: " + err.Error())
+	}
 
 	// Load web clients
 	m.clients = m.LoadAllClients()
 
-	return &m, nil
+	return m, nil
 }
 
 func (m *model) openDB() error {
 	m.dbOpened += 1
-	if db.dbOpened == 1 {
+	if m.dbOpened == 1 {
 		var err error
 		m.bolt, err = boltease.Create(m.dbFileName, 0600, nil)
 		if err != nil {
@@ -105,20 +114,22 @@ func (m *model) saveChanges() error {
 	}
 	defer m.closeDB()
 
-	if m.site.needsSave() {
-		if err = m.site.saveToDB(); err != nil {
+	if m.site.NeedsSave() {
+		if err = m.site.SaveToDB(); err != nil {
 			return err
 		}
 	}
-	if m.jam.needsSave() {
-		if err = m.jam.saveToDB(); err != nil {
+	if m.jam.IsChanged {
+		if err = m.jam.SaveToDB(); err != nil {
 			return err
 		}
+		m.jam.IsChanged = false
 	}
 	if m.clientsUpdated {
 		if err = m.SaveAllClients(); err != nil {
 			return err
 		}
+		m.clientsUpdated = false
 	}
 	return nil
 }

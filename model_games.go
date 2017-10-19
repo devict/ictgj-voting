@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/pborman/uuid"
+)
 
 /**
  * Game
@@ -17,19 +21,37 @@ type Game struct {
 }
 
 // Create a new game object
-func NewGame(tmId string) *Game {
+func NewGame(tmId string) (*Game, error) {
+	if tmId == "" {
+		return nil, errors.New("Team ID is required")
+	}
 	return &Game{
 		TeamId: tmId,
 		mPath:  []string{"jam", "teams", tmId, "game"},
-	}
+	}, nil
 }
 
-func (gm *Game) GetScreenshot(ssId string) *Screenshot {
+func (gm *Game) GetScreenshot(ssId string) (*Screenshot, error) {
 	for _, ss := range gm.Screenshots {
 		if ss.UUID == ssId {
-			return ss
+			return &ss, nil
 		}
 	}
+	return nil, errors.New("Invalid Id")
+}
+
+func (gm *Game) RemoveScreenshot(ssId string) error {
+	idx := -1
+	for i, ss := range gm.Screenshots {
+		if ss.UUID == ssId {
+			idx = i
+			return nil
+		}
+	}
+	if idx < 0 {
+		return errors.New("Invalid Id")
+	}
+	gm.Screenshots = append(gm.Screenshots[:idx], gm.Screenshots[idx+1:]...)
 	return nil
 }
 
@@ -44,11 +66,18 @@ type Screenshot struct {
 }
 
 // Create a Screenshot Object
-func NewScreenshot(tmId, ssId string) *Screenshot {
+func NewScreenshot(tmId, ssId string) (*Screenshot, error) {
+	if tmId == "" {
+		return nil, errors.New("Team ID is required")
+	}
+	if ssId == "" {
+		// Generate a new UUID
+		ssId = uuid.New()
+	}
 	return &Screenshot{
 		UUID:  ssId,
 		mPath: []string{"jam", "teams", tmId, "game", "screenshots", ssId},
-	}
+	}, nil
 }
 
 /**
@@ -57,14 +86,17 @@ func NewScreenshot(tmId, ssId string) *Screenshot {
  */
 
 // Load a team's game from the DB and return it
-func (gj *Gamejam) LoadTeamGame(tmId string) *Game {
+func (gj *Gamejam) LoadTeamGame(tmId string) (*Game, error) {
 	var err error
 	if err = gj.m.openDB(); err != nil {
-		return nil
+		return nil, err
 	}
 	defer gj.m.closeDB()
 
-	gm := NewGame(tmId)
+	gm, err := NewGame(tmId)
+	if err != nil {
+		return nil, err
+	}
 	if gm.Name, err = gj.m.bolt.GetValue(gm.mPath, "name"); err != nil {
 		gm.Name = ""
 	}
@@ -74,10 +106,11 @@ func (gj *Gamejam) LoadTeamGame(tmId string) *Game {
 	if gm.Link, err = gj.m.bolt.GetValue(gm.mPath, "link"); err != nil {
 		gm.Link = ""
 	}
+
 	// Now get the game screenshots
 	gm.Screenshots = gj.LoadTeamGameScreenshots(tmId)
 
-	return &gm
+	return gm, nil
 }
 
 // Load a games screenshots from the DB
@@ -89,44 +122,50 @@ func (gj *Gamejam) LoadTeamGameScreenshots(tmId string) []Screenshot {
 	defer gj.m.closeDB()
 
 	var ret []Screenshot
-	gm := NewGame(tmId)
+	gm, err := NewGame(tmId)
+	if err != nil {
+		return ret
+	}
 	ssBktPath := append(gm.mPath, "screenshots")
 	var ssIds []string
 	ssIds, _ = gj.m.bolt.GetBucketList(ssBktPath)
 	for _, v := range ssIds {
-		ssLd := gj.LoadTeamGameScreenshot(tmId, v)
+		ssLd, _ := gj.LoadTeamGameScreenshot(tmId, v)
 		if ssLd != nil {
-			ret = append(ret, ssLd)
+			ret = append(ret, *ssLd)
 		}
 	}
 	return ret
 }
 
 // Load a screenshot from the DB
-func (gj *Gamejam) LoadTeamGameScreenshot(tmId, ssId string) *Screenshot {
+func (gj *Gamejam) LoadTeamGameScreenshot(tmId, ssId string) (*Screenshot, error) {
 	var err error
 	if err = gj.m.openDB(); err != nil {
-		return nil
+		return nil, err
 	}
 	defer gj.m.closeDB()
 
-	ret := NewScreenshot(tmId, ssId)
+	ret, err := NewScreenshot(tmId, ssId)
+	if err != nil {
+		return nil, err
+	}
 	if ret.Description, err = gj.m.bolt.GetValue(ret.mPath, "description"); err != nil {
-		return nil
+		return nil, err
 	}
 	if ret.Image, err = gj.m.bolt.GetValue(ret.mPath, "image"); err != nil {
-		return nil
+		return nil, err
 	}
 	if ret.Thumbnail, err = gj.m.bolt.GetValue(ret.mPath, "thumbnail"); err != nil {
-		return nil
+		return nil, err
 	}
 	if ret.Thumbnail == "" {
 		ret.Thumbnail = ret.Image
 	}
 	if ret.Filetype, err = gj.m.bolt.GetValue(ret.mPath, "filetype"); err != nil {
-		return nil
+		return nil, err
 	}
-	return ret
+	return ret, err
 }
 
 // Save a game to the DB
@@ -141,6 +180,10 @@ func (gj *Gamejam) SaveGame(gm *Game) error {
 		return err
 	}
 
+	var tm *Team
+	if tm, err = gj.GetTeamById(gm.TeamId); err != nil {
+		return err
+	}
 	if gm.Name == "" {
 		gm.Name = tm.Name + "'s Game"
 	}
@@ -169,26 +212,35 @@ func (gj *Gamejam) SaveScreenshots(gm *Game) error {
 	defer gj.m.closeDB()
 
 	for _, ss := range gm.Screenshots {
-		if err = gj.SaveScreenshot(gm.TeamId, ss); err != nil {
+		if err = gj.SaveScreenshot(&ss); err != nil {
 			return err
 		}
 	}
 	// Now remove unused screenshots
 	ssPath := append(gm.mPath, "screenshots")
+	var ssIds []string
 	if ssIds, err = gj.m.bolt.GetBucketList(ssPath); err != nil {
 		return err
 	}
 	for i := range ssIds {
-		if gm.GetScreenshot(ssIds[i]) == nil {
-			if err = gj.DeleteScreenshot(NewScreenshot(tm.TeamId, ssIds[i])); err != nil {
-				return err
-			}
+		ss, _ := gm.GetScreenshot(ssIds[i])
+		if ss != nil {
+			// A valid screenshot, next
+			continue
+		}
+		if ss, err = NewScreenshot(gm.TeamId, ssIds[i]); err != nil {
+			// Error building screenshot to delete...
+			continue
+		}
+		if err = gj.DeleteScreenshot(ss); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 // Save a screenshot
-func (gj *Gamejam) SaveScreenshot(tmId string, ss *Screenshot) error {
+func (gj *Gamejam) SaveScreenshot(ss *Screenshot) error {
 	var err error
 	if err = gj.m.openDB(); err != nil {
 		return err
@@ -229,12 +281,11 @@ func (gj *Gamejam) DeleteScreenshot(ss *Screenshot) error {
 
 // Set the given team's game to gm
 func (gj *Gamejam) UpdateGame(tmId string, gm *Game) error {
-	var found bool
-	tm := gj.GetTeamById(tmId)
-	if tm == nil {
-		return errors.New("Invalid team ID: " + gm.TeamId)
+	tm, err := gj.GetTeamById(tmId)
+	if err != nil {
+		return errors.New("Error getting team: " + err.Error())
 	}
 	tm.Game = gm
-	gj.NeedsUpdate([]string{"team", tmId, "game"})
+	gj.IsChanged = true
 	return nil
 }

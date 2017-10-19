@@ -3,6 +3,9 @@ package main
 import "golang.org/x/crypto/bcrypt"
 
 // These are all model functions that have to do with users
+// Unlike gamejam functions, we manipulate the DB directly
+// We want to make sure that we always use the most up-to-date user
+// information.
 
 // Returns true if there are any users in the database
 func (m *model) hasUser() bool {

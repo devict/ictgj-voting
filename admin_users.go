@@ -29,7 +29,7 @@ func handleAdminDoLogin(w http.ResponseWriter, req *http.Request) {
 // If it can't, it returns an error
 func doLogin(email, password string) error {
 	if strings.TrimSpace(email) != "" && strings.TrimSpace(password) != "" {
-		return db.checkCredentials(email, password)
+		return m.checkCredentials(email, password)
 	}
 	return errors.New("Invalid Credentials")
 }
@@ -53,12 +53,12 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 		switch vars["function"] {
 		case "save":
 			email = req.FormValue("email")
-			if db.isValidUserEmail(email) {
+			if m.isValidUserEmail(email) {
 				// User already exists
 				page.session.setFlashMessage("A user with email address "+email+" already exists!", "error")
 			} else {
 				password := req.FormValue("password")
-				if err := db.updateUserPassword(email, string(password)); err != nil {
+				if err := m.updateUserPassword(email, string(password)); err != nil {
 					page.session.setFlashMessage(err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("User "+email+" created!", "success")
@@ -73,10 +73,10 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 		switch vars["function"] {
 		case "save":
 			var err error
-			if db.isValidUserEmail(email) {
+			if m.isValidUserEmail(email) {
 				password := req.FormValue("password")
 				if password != "" {
-					if err = db.updateUserPassword(email, password); err != nil {
+					if err = m.updateUserPassword(email, password); err != nil {
 						page.session.setFlashMessage(err.Error(), "error")
 					} else {
 						page.session.setFlashMessage("User "+email+" created!", "success")
@@ -86,8 +86,8 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 			}
 		case "delete":
 			var err error
-			if db.isValidUserEmail(email) {
-				if err = db.deleteUser(email); err != nil {
+			if m.isValidUserEmail(email) {
+				if err = m.deleteUser(email); err != nil {
 					page.session.setFlashMessage(err.Error(), "error")
 				} else {
 					page.session.setFlashMessage("User "+email+" deleted!", "success")
@@ -96,7 +96,7 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 			redirect("/admin/users", w, req)
 		default:
 			page.SubTitle = "Edit Admin User"
-			if !db.isValidUserEmail(email) {
+			if !m.isValidUserEmail(email) {
 				page.session.setFlashMessage("Couldn't find the requested user, please try again.", "error")
 				redirect("/admin/users", w, req)
 			}
@@ -107,7 +107,7 @@ func handleAdminUsers(w http.ResponseWriter, req *http.Request, page *pageData) 
 		type usersPageData struct {
 			Users []string
 		}
-		page.TemplateData = usersPageData{Users: db.getAllUsers()}
+		page.TemplateData = usersPageData{Users: m.getAllUsers()}
 
 		page.SubTitle = "Admin Users"
 		page.show("admin-users.html", w)

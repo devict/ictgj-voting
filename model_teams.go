@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/pborman/uuid"
+)
 
 /**
  * Team
@@ -16,10 +20,22 @@ type Team struct {
 
 // Create a team
 func NewTeam(id string) *Team {
+	if id == "" {
+		id = uuid.New()
+	}
 	return &Team{
 		UUID:  id,
 		mPath: []string{"jam", "teams", id},
 	}
+}
+
+func (gj *Gamejam) GetTeamById(id string) (*Team, error) {
+	for i := range gj.Teams {
+		if gj.Teams[i].UUID == id {
+			return &gj.Teams[i], nil
+		}
+	}
+	return nil, errors.New("Invalid Team Id given")
 }
 
 type TeamMember struct {
@@ -33,11 +49,53 @@ type TeamMember struct {
 }
 
 // Create a new team member
-func NewTeamMember(tmId, uId string) *TeamMember {
+func NewTeamMember(tmId, uId string) (*TeamMember, error) {
+	if tmId == "" {
+		return nil, errors.New("Team ID is required")
+	}
+	if uId == "" {
+		uId = uuid.New()
+	}
 	return &TeamMember{
 		UUID:  uId,
 		mPath: []string{"jam", "teams", tmId, "members", uId},
+	}, nil
+}
+
+// AddTeamMember adds a new team member
+func (tm *Team) AddTeamMember(mbr *TeamMember) error {
+	lkup, _ := tm.GetTeamMemberById(mbr.UUID)
+	if lkup != nil {
+		return errors.New("A Team Member with that Id already exists")
 	}
+	tm.Members = append(tm.Members, *mbr)
+	return nil
+}
+
+// GetTeamMemberById returns a member with the given uuid
+// or an error if it couldn't find it
+func (tm *Team) GetTeamMemberById(uuid string) (*TeamMember, error) {
+	for i := range tm.Members {
+		if tm.Members[i].UUID == uuid {
+			return &tm.Members[i], nil
+		}
+	}
+	return nil, errors.New("Invalid Team Member Id given")
+}
+
+func (tm *Team) RemoveTeamMemberById(id string) error {
+	idx := -1
+	for i := range tm.Members {
+		if tm.Members[i].UUID == id {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return errors.New("Invalid Team Member ID given")
+	}
+	tm.Members = append(tm.Members[:idx], tm.Members[idx+1:]...)
+	return nil
 }
 
 /**
@@ -50,43 +108,47 @@ func (gj *Gamejam) LoadAllTeams() []Team {
 	var err error
 	var ret []Team
 	if err = gj.m.openDB(); err != nil {
-		return err
+		return ret
 	}
 	defer gj.m.closeDB()
 
-	if tmUUIDs, err = m.bolt.GetBucketList(mbrsPath); err != nil {
+	var tmUUIDs []string
+	tmsPath := append(gj.mPath, "teams")
+	if tmUUIDs, err = m.bolt.GetBucketList(tmsPath); err != nil {
 		return ret
 	}
 	for _, v := range tmUUIDs {
-		tm := gj.LoadTeam(v)
+		tm, _ := gj.LoadTeam(v)
 		if tm != nil {
-			ret = append(ret, tm)
+			ret = append(ret, *tm)
 		}
 	}
 	return ret
 }
 
 // Load a team out of the database
-func (gj *Gamejam) LoadTeam(uuid string) *Team {
+func (gj *Gamejam) LoadTeam(uuid string) (*Team, error) {
 	var err error
 	if err = gj.m.openDB(); err != nil {
-		return err
+		return nil, err
 	}
 	defer gj.m.closeDB()
 
 	// Team Data
 	tm := NewTeam(uuid)
 	if tm.Name, err = gj.m.bolt.GetValue(tm.mPath, "name"); err != nil {
-		return nil
+		return nil, errors.New("Error loading team: " + err.Error())
 	}
 
 	// Team Members
 	tm.Members = gj.LoadTeamMembers(uuid)
 
 	// Team Game
-	tm.Game = gj.LoadTeamGame(uuid)
+	if tm.Game, err = gj.LoadTeamGame(uuid); err != nil {
+		return nil, errors.New("Error loading team game: " + err.Error())
+	}
 
-	return tm
+	return tm, nil
 }
 
 // Load the members of a team from the DB and return them
@@ -104,9 +166,9 @@ func (gj *Gamejam) LoadTeamMembers(tmId string) []TeamMember {
 	mbrsPath := append(tm.mPath, "members")
 	if memberUuids, err = gj.m.bolt.GetBucketList(mbrsPath); err == nil {
 		for _, v := range memberUuids {
-			mbr := gj.LoadTeamMember(tmId, v)
+			mbr, _ := gj.LoadTeamMember(tmId, v)
 			if mbr != nil {
-				ret = append(ret, mbr)
+				ret = append(ret, *mbr)
 			}
 		}
 	}
@@ -114,17 +176,20 @@ func (gj *Gamejam) LoadTeamMembers(tmId string) []TeamMember {
 }
 
 // Load a team member from the DB and return it
-func (gj *Gamejam) LoadTeamMember(tmId, mbrId string) *TeamMember {
+func (gj *Gamejam) LoadTeamMember(tmId, mbrId string) (*TeamMember, error) {
 	var err error
 	if err = gj.m.openDB(); err != nil {
-		return nil
+		return nil, err
 	}
 	defer gj.m.closeDB()
 
-	mbr := NewTeamMember(tmId, mbrId)
+	mbr, err := NewTeamMember(tmId, mbrId)
+	if err != nil {
+		return nil, errors.New("Error loading team member: " + err.Error())
+	}
 	// Name is the only required field
 	if mbr.Name, err = gj.m.bolt.GetValue(mbr.mPath, "name"); err != nil {
-		return nil
+		return nil, errors.New("Error loading team member: " + err.Error())
 	}
 	if mbr.SlackId, err = gj.m.bolt.GetValue(mbr.mPath, "slackid"); err != nil {
 		mbr.SlackId = ""
@@ -135,7 +200,7 @@ func (gj *Gamejam) LoadTeamMember(tmId, mbrId string) *TeamMember {
 	if mbr.Email, err = gj.m.bolt.GetValue(mbr.mPath, "email"); err != nil {
 		mbr.Email = ""
 	}
-	return mbr
+	return mbr, nil
 }
 
 func (gj *Gamejam) SaveTeam(tm *Team) error {
@@ -146,7 +211,7 @@ func (gj *Gamejam) SaveTeam(tm *Team) error {
 	defer gj.m.closeDB()
 
 	// Save team data
-	if err = gj.m.bolt.SetValue(tm.mPath, "name"); err != nil {
+	if err = gj.m.bolt.SetValue(tm.mPath, "name", tm.Name); err != nil {
 		return err
 	}
 
@@ -167,10 +232,12 @@ func (gj *Gamejam) SaveTeam(tm *Team) error {
 	}
 
 	// Save team game
-	return gj.SaveGame(gm)
+	return gj.SaveGame(tm.Game)
 }
 
 // Delete the team tm
+// TODO: Deletes should be done all at once when syncing memory to the DB
+/*
 func (gj *Gamejam) DeleteTeam(tm *Team) error {
 	var err error
 	if err = gj.m.openDB(); err != nil {
@@ -183,8 +250,11 @@ func (gj *Gamejam) DeleteTeam(tm *Team) error {
 	}
 	return gj.m.bolt.DeleteBucket(tm.mPath[:len(tm.mPath)-1], tm.UUID)
 }
+*/
 
 // Delete the TeamMember mbr from Team tm
+// TODO: Deletes should be done all at once when syncing memory to the DB
+/*
 func (gj *Gamejam) DeleteTeamMember(tm *Team, mbr *TeamMember) error {
 	var err error
 	if err = gj.m.openDB(); err != nil {
@@ -197,28 +267,47 @@ func (gj *Gamejam) DeleteTeamMember(tm *Team, mbr *TeamMember) error {
 	}
 	return gj.m.bolt.DeleteBucket(mbr.mPath[:len(mbr.mPath)-1], mbr.UUID)
 }
+*/
 
 /**
  * In Memory functions
  * This is generally how the app accesses data
  */
 
-// Find a team by it's ID
-func (gj *Gamejam) GetTeamById(id string) *Team {
-	for i := range gj.Teams {
-		if gj.Teams[i].UUID == id {
-			return gj.Teams[i]
-		}
+// Add a team
+func (gj *Gamejam) AddTeam(tm *Team) error {
+	if _, err := gj.GetTeamById(tm.UUID); err != nil {
+		return errors.New("A team with that ID already exists")
 	}
+	if _, err := gj.GetTeamByName(tm.Name); err != nil {
+		return errors.New("A team with that Name already exists")
+	}
+	gj.Teams = append(gj.Teams, *tm)
 	return nil
 }
 
 // Find a team by name
-func (gj *Gamejam) GetTeamByName(nm string) *Team {
+func (gj *Gamejam) GetTeamByName(nm string) (*Team, error) {
 	for i := range gj.Teams {
 		if gj.Teams[i].Name == nm {
-			return gj.Teams[i]
+			return &gj.Teams[i], nil
 		}
 	}
+	return nil, errors.New("Invalid team name given")
+}
+
+// Remove a team by id
+func (gj *Gamejam) RemoveTeamById(id string) error {
+	idx := -1
+	for i := range gj.Teams {
+		if gj.Teams[i].UUID == id {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return errors.New("Invalid Team ID given")
+	}
+	gj.Teams = append(gj.Teams[:idx], gj.Teams[idx+1:]...)
 	return nil
 }

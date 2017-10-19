@@ -1,5 +1,11 @@
 package main
 
+import (
+	"errors"
+
+	"github.com/pborman/uuid"
+)
+
 /**
  * Client
  * A client is a system that is connecting to the web server
@@ -14,10 +20,30 @@ type Client struct {
 }
 
 func NewClient(id string) *Client {
+	if id == "" {
+		id = uuid.New()
+	}
 	return &Client{
 		UUID:  id,
 		mPath: []string{"clients", id},
 	}
+}
+
+func (m *model) AddClient(cl *Client) error {
+	for i := range m.clients {
+		if m.clients[i].UUID == cl.UUID {
+			return errors.New("A client with that ID already exists")
+		}
+		if m.clients[i].IP == cl.IP {
+			return errors.New("A client with that IP already exists")
+		}
+		if m.clients[i].Name == cl.Name {
+			return errors.New("A client with that Name already exists")
+		}
+	}
+	m.clients = append(m.clients, *cl)
+	m.clientsUpdated = true
+	return nil
 }
 
 /**
@@ -71,7 +97,7 @@ func (m *model) SaveAllClients() error {
 	defer m.closeDB()
 
 	for _, v := range m.clients {
-		if err = m.SaveClient(v); err != nil {
+		if err = m.SaveClient(&v); err != nil {
 			return err
 		}
 	}
@@ -86,13 +112,13 @@ func (m *model) SaveClient(cl *Client) error {
 	}
 	defer m.closeDB()
 
-	if err = db.bolt.SetBool(cl.mPath, "auth", c.Auth); err != nil {
+	if err = m.bolt.SetBool(cl.mPath, "auth", cl.Auth); err != nil {
 		return err
 	}
-	if err = db.bolt.SetValue(cl.mPath, "name", c.Name); err != nil {
+	if err = m.bolt.SetValue(cl.mPath, "name", cl.Name); err != nil {
 		return err
 	}
-	return db.bolt.SetValue(cl.mPath, "ip", c.IP)
+	return m.bolt.SetValue(cl.mPath, "ip", cl.IP)
 }
 
 /**
@@ -132,7 +158,7 @@ func (m *model) UpdateClient(cl *Client) {
 		}
 	}
 	if !found {
-		m.clients = append(m.clients, cl)
+		m.clients = append(m.clients, *cl)
 	}
 	m.clientsUpdated = true
 }

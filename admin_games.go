@@ -30,11 +30,15 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 		page.SubTitle = "Games"
 		page.show("admin-games.html", w)
 	} else {
-		tm := m.jam.GetTeamById(teamId)
+		tm, _ := m.jam.GetTeamById(teamId)
 		if tm != nil {
 			switch vars["function"] {
 			case "save":
-				gm := NewGame(tm.UUID)
+				var err error
+				var gm *Game
+				if gm, err = NewGame(tm.UUID); err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				}
 				gm.Name = req.FormValue("gamename")
 				gm.Link = req.FormValue("gamelink")
 				gm.Description = req.FormValue("gamedesc")
@@ -50,8 +54,13 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 				}
 				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
 			case "screenshotdelete":
+				var ss *Screenshot
+				var err error
 				ssid := vars["subid"]
-				if err := tm.deleteScreenshot(ssid); err != nil {
+				if ss, err = NewScreenshot(tm.UUID, ssid); err != nil {
+					page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
+				}
+				if err = m.jam.DeleteScreenshot(ss); err != nil {
 					page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
 				}
 				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
@@ -65,6 +74,8 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 
 func saveScreenshots(tm *Team, req *http.Request) error {
 	var err error
+	var ss *Screenshot
+
 	file, hdr, err := req.FormFile("newssfile")
 	if err != nil {
 		return err
@@ -74,13 +85,13 @@ func saveScreenshots(tm *Team, req *http.Request) error {
 	if len(hdr.Filename) > extIdx {
 		fltp = hdr.Filename[extIdx+1:]
 	}
-	m, _, err := image.Decode(file)
+	mI, _, err := image.Decode(file)
 	buf := new(bytes.Buffer)
 	// We convert everything to jpg
-	if err = jpeg.Encode(buf, m, nil); err != nil {
+	if err = jpeg.Encode(buf, mI, nil); err != nil {
 		return errors.New("Unable to encode image")
 	}
-	thm := resize.Resize(200, 0, m, resize.Lanczos3)
+	thm := resize.Resize(200, 0, mI, resize.Lanczos3)
 	thmBuf := new(bytes.Buffer)
 	var thmString string
 	if fltp == "gif" {
@@ -94,9 +105,13 @@ func saveScreenshots(tm *Team, req *http.Request) error {
 	}
 	thmString = base64.StdEncoding.EncodeToString(thmBuf.Bytes())
 
-	return tm.saveScreenshot(&Screenshot{
-		Image:     base64.StdEncoding.EncodeToString(buf.Bytes()),
-		Thumbnail: thmString,
-		Filetype:  fltp,
-	})
+	if ss, err = NewScreenshot(tm.UUID, ""); err != nil {
+		return err
+	}
+
+	ss.Image = base64.StdEncoding.EncodeToString(buf.Bytes())
+	ss.Thumbnail = thmString
+	ss.Filetype = fltp
+
+	return m.jam.SaveScreenshot(ss)
 }

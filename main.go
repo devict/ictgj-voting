@@ -69,7 +69,9 @@ func main() {
 	}
 
 	loadConfig()
-	site.save()
+	if err = site.SaveToDB(); err != nil {
+		errorExit("Unable to save site config to DB: " + err.Error())
+	}
 	initialize()
 
 	r = mux.NewRouter()
@@ -184,13 +186,11 @@ func initialize() {
 		fmt.Print("GameJam Name: ")
 		gjName, _ := reader.ReadString('\n')
 		gjName = strings.TrimSpace(gjName)
-		if db.setJamName(gjName) != nil {
-			fmt.Println("Error saving Current Jam")
-		}
+		m.jam.Name = gjName
 	}
 
 	if m.jam.Name != "" {
-		fmt.Println("Current Jam Name: " + jmNm)
+		fmt.Println("Current Jam Name: " + m.jam.Name)
 	} else {
 		fmt.Println("No Jam Name Specified")
 	}
@@ -220,7 +220,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	// First check if we're logged in
 	userEmail, _ := p.session.getStringValue("email")
 	// With a valid account
-	p.LoggedIn = db.isValidUserEmail(userEmail)
+	p.LoggedIn = m.isValidUserEmail(userEmail)
 
 	p.Site = site
 	p.SubTitle = "GameJam Voting"
@@ -257,20 +257,15 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	}
 	p.HideAdminMenu = true
 
-	if p.CurrentJam = db.getJamName(); p.CurrentJam != "" {
-		p.FlashMessage = "Error Loading Current GameJam: " + err.Error()
-		p.FlashClass = "error"
-	}
-
 	p.ClientId = p.session.getClientId()
-	cl := db.getClient(p.ClientId)
+	cl := m.GetClient(p.ClientId)
 	p.ClientIsAuth = cl.Auth
 	p.ClientIsServer = clientIsServer(req)
 
 	// Public Mode
-	p.PublicMode = db.getPublicSiteMode()
+	p.PublicMode = m.site.GetPublicMode()
 	// Authentication Mode
-	p.AuthMode = db.site.getAuthMode()
+	p.AuthMode = m.site.GetAuthMode()
 
 	return p
 }
@@ -317,8 +312,8 @@ func resetToDefaults() {
 	conf, _ := reader.ReadString('\n')
 	conf = strings.ToUpper(strings.TrimSpace(conf))
 	if strings.HasPrefix(conf, "Y") {
-		if def.save() != nil {
-			errorExit("Error resetting to defaults")
+		if err := def.SaveToDB(); err != nil {
+			errorExit("Error resetting to defaults: " + err.Error())
 		}
 		fmt.Println("Reset to defaults")
 	}
