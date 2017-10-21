@@ -51,6 +51,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 				mbrName := req.FormValue("newmembername")
 				mbr, err := NewTeamMember(tm.UUID, "")
 				if err == nil {
+					mbr.Name = mbrName
 					mbr.SlackId = req.FormValue("newmemberslackid")
 					mbr.Twitter = req.FormValue("newmembertwitter")
 					mbr.Email = req.FormValue("newmemberemail")

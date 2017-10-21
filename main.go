@@ -58,7 +58,6 @@ type menuItem struct {
 var sessionSecret = "JCOP5e8ohkTcOzcSMe74"
 
 var sessionStore = sessions.NewCookieStore([]byte(sessionSecret))
-var site *siteData
 var r *mux.Router
 var m *model
 
@@ -69,7 +68,7 @@ func main() {
 	}
 
 	loadConfig()
-	if err = site.SaveToDB(); err != nil {
+	if err = m.site.SaveToDB(); err != nil {
 		errorExit("Unable to save site config to DB: " + err.Error())
 	}
 	initialize()
@@ -109,8 +108,8 @@ func main() {
 
 	chain := alice.New(loggingHandler).Then(r)
 
-	fmt.Printf("Listening on port %d\n", site.Port)
-	log.Fatal(http.ListenAndServe("127.0.0.1:"+strconv.Itoa(site.Port), chain))
+	fmt.Printf("Listening on port %d\n", m.site.Port)
+	log.Fatal(http.ListenAndServe("127.0.0.1:"+strconv.Itoa(m.site.Port), chain))
 }
 
 func loadConfig() {
@@ -187,6 +186,7 @@ func initialize() {
 		gjName, _ := reader.ReadString('\n')
 		gjName = strings.TrimSpace(gjName)
 		m.jam.Name = gjName
+		assertError(m.jam.SaveToDB())
 	}
 
 	if m.jam.Name != "" {
@@ -201,14 +201,14 @@ func loggingHandler(h http.Handler) http.Handler {
 }
 
 func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
-	if site.DevMode {
+	if m.site.DevMode {
 		w.Header().Set("Cache-Control", "no-cache")
 	}
 	p := new(pageData)
 	// Get session
 	var err error
 	var s *sessions.Session
-	if s, err = sessionStore.Get(req, site.SessionName); err != nil {
+	if s, err = sessionStore.Get(req, m.site.SessionName); err != nil {
 		http.Error(w, err.Error(), 500)
 		return p
 	}
@@ -222,7 +222,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	// With a valid account
 	p.LoggedIn = m.isValidUserEmail(userEmail)
 
-	p.Site = site
+	p.Site = m.site
 	p.SubTitle = "GameJam Voting"
 	p.Stylesheets = make([]string, 0, 0)
 	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/css/pure-min.css")
@@ -258,7 +258,11 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	p.HideAdminMenu = true
 
 	p.ClientId = p.session.getClientId()
-	cl := m.GetClient(p.ClientId)
+	var cl *Client
+	if cl, err = m.GetClient(p.ClientId); err != nil {
+		// A new client
+		cl = NewClient(p.ClientId)
+	}
 	p.ClientIsAuth = cl.Auth
 	p.ClientIsServer = clientIsServer(req)
 
@@ -290,8 +294,8 @@ func (p *pageData) show(tmplName string, w http.ResponseWriter) error {
 // Spit out a template
 func outputTemplate(tmplName string, tmplData interface{}, w http.ResponseWriter) error {
 	n := "/templates/" + tmplName
-	l := template.Must(template.New("layout").Parse(FSMustString(site.DevMode, n)))
-	t := template.Must(l.Parse(FSMustString(site.DevMode, n)))
+	l := template.Must(template.New("layout").Parse(FSMustString(m.site.DevMode, n)))
+	t := template.Must(l.Parse(FSMustString(m.site.DevMode, n)))
 	return t.Execute(w, tmplData)
 }
 

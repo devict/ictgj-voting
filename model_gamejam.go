@@ -61,6 +61,9 @@ func (gj *Gamejam) SaveToDB() error {
 	defer gj.m.closeDB()
 
 	var errs []error
+	if err := gj.m.bolt.SetValue(gj.mPath, "name", gj.Name); err != nil {
+		errs = append(errs, err)
+	}
 	// Save all Teams
 	for _, tm := range gj.Teams {
 		if err := gj.SaveTeam(&tm); err != nil {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/pborman/uuid"
 )
@@ -23,8 +24,11 @@ func NewTeam(id string) *Team {
 	if id == "" {
 		id = uuid.New()
 	}
+	// Create an emtpy game for the team
+	gm, _ := NewGame(id)
 	return &Team{
 		UUID:  id,
+		Game:  gm,
 		mPath: []string{"jam", "teams", id},
 	}
 }
@@ -114,7 +118,8 @@ func (gj *Gamejam) LoadAllTeams() []Team {
 
 	var tmUUIDs []string
 	tmsPath := append(gj.mPath, "teams")
-	if tmUUIDs, err = m.bolt.GetBucketList(tmsPath); err != nil {
+	if tmUUIDs, err = gj.m.bolt.GetBucketList(tmsPath); err != nil {
+		fmt.Println(err.Error())
 		return ret
 	}
 	for _, v := range tmUUIDs {
@@ -276,10 +281,10 @@ func (gj *Gamejam) DeleteTeamMember(tm *Team, mbr *TeamMember) error {
 
 // Add a team
 func (gj *Gamejam) AddTeam(tm *Team) error {
-	if _, err := gj.GetTeamById(tm.UUID); err != nil {
+	if _, err := gj.GetTeamById(tm.UUID); err == nil {
 		return errors.New("A team with that ID already exists")
 	}
-	if _, err := gj.GetTeamByName(tm.Name); err != nil {
+	if _, err := gj.GetTeamByName(tm.Name); err == nil {
 		return errors.New("A team with that Name already exists")
 	}
 	gj.Teams = append(gj.Teams, *tm)

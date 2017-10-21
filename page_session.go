@@ -43,7 +43,9 @@ func (p *pageSession) getClientId() string {
 		fmt.Println("  Client IP:" + clientIp)
 		if clientIp != "127.0.0.1" {
 			fmt.Println("  Pulling data by IP")
-			cli = m.GetClientByIp(clientIp)
+			if cli, err = m.GetClientByIp(clientIp); err != nil {
+				cli = NewClient(clientId)
+			}
 		}
 		if cli != nil {
 			clientId = cli.UUID

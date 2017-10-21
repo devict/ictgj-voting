@@ -127,23 +127,23 @@ func (m *model) SaveClient(cl *Client) error {
  */
 
 // Return a client by it's UUID
-func (m *model) GetClient(id string) *Client {
+func (m *model) GetClient(id string) (*Client, error) {
 	for i := range m.clients {
 		if m.clients[i].UUID == id {
-			return &m.clients[i]
+			return &m.clients[i], nil
 		}
 	}
-	return nil
+	return nil, errors.New("Invalid Id")
 }
 
 // Return a client by it's IP address
-func (m *model) GetClientByIp(ip string) *Client {
+func (m *model) GetClientByIp(ip string) (*Client, error) {
 	for i := range m.clients {
 		if m.clients[i].IP == ip {
-			return &m.clients[i]
+			return &m.clients[i], nil
 		}
 	}
-	return nil
+	return nil, errors.New("Invalid Ip")
 }
 
 // Add/Update a client in the data model

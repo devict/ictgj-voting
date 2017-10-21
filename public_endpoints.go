@@ -71,7 +71,10 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("Error parsing timestamp: " + ts)
 		redirect("/", w, req)
 	}
-	client := m.GetClient(page.ClientId)
+	client, err := m.GetClient(page.ClientId)
+	if err != nil {
+		client = NewClient(page.ClientId)
+	}
 
 	// voteSlice is an ordered string slice of the voters preferences
 	voteCSV := req.FormValue("uservote")

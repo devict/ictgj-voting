@@ -85,13 +85,13 @@ func (gj *Gamejam) LoadAllVotes() []Vote {
 
 	votesPath := []string{"jam", "votes"}
 	var cliUUIDs []string
-	if cliUUIDs, err = m.bolt.GetBucketList(votesPath); err != nil {
+	if cliUUIDs, err = gj.m.bolt.GetBucketList(votesPath); err != nil {
 		return ret
 	}
 	for _, cId := range cliUUIDs {
 		vtsPth := append(votesPath, cId)
 		var times []string
-		if times, err = m.bolt.GetBucketList(vtsPth); err != nil {
+		if times, err = gj.m.bolt.GetBucketList(vtsPth); err != nil {
 			// Error reading this bucket, move on to the next
 			continue
 		}

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"strconv"
+	"strings"
 )
 
 /**
@@ -59,16 +60,16 @@ func (s *siteData) LoadFromDB() error {
 	}
 	defer s.m.closeDB()
 
-	if title, err := s.m.bolt.GetValue(s.mPath, "title"); err == nil {
+	if title, _ := s.m.bolt.GetValue(s.mPath, "title"); strings.TrimSpace(title) != "" {
 		s.Title = title
 	}
 	if port, err := s.m.bolt.GetInt(s.mPath, "port"); err == nil {
 		s.Port = port
 	}
-	if sessionName, err := s.m.bolt.GetValue(s.mPath, "session-name"); err == nil {
+	if sessionName, _ := s.m.bolt.GetValue(s.mPath, "session-name"); strings.TrimSpace(sessionName) != "" {
 		s.SessionName = sessionName
 	}
-	if serverDir, err := s.m.bolt.GetValue(s.mPath, "server-dir"); err == nil {
+	if serverDir, _ := s.m.bolt.GetValue(s.mPath, "server-dir"); strings.TrimSpace(serverDir) != "" {
 		s.ServerDir = serverDir
 	}
 	s.changed = false

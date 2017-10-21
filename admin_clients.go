@@ -11,7 +11,10 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 	vars := mux.Vars(req)
 	page.SubTitle = "Clients"
 	clientId := vars["id"]
-	client := m.GetClient(clientId)
+	client, err := m.GetClient(clientId)
+	if err != nil {
+		client = NewClient(clientId)
+	}
 	clientIp, _, _ := net.SplitHostPort(req.RemoteAddr)
 	if clientId == "" {
 		type clientsPageData struct {
