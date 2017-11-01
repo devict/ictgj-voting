@@ -45,7 +45,16 @@ go get github.com/devict/ictgj-voting
 ```
 
 
-## Developing/Contributing Notes
+## Developing/Contributing
+### Setup
+1. Fork this repo, rather than cloning directly.
+1. Run `go get github.com/mjibson/esc`
+1. Then `go get` your github fork, similarly to the command in the Building section above.
+1. Run `go generate`
+1. Run `go build`
+1. Make and commit your changes, then submit a Pull Request (PR) through GitHub from your fork to `github.com/devict/ictgj-voting`
+
+### Notes
 * Pass in the `-dev` flag to enable development mode (load assets from the file system instead of embedded).  
 * After making changes to assets (templates, javascript, css) be sure to run `go generate` before `go build` - this regenerates the `assets.go` file  
 * Please use the go tooling to match the standard go coding style. 
