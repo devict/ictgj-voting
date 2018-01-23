@@ -9,8 +9,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -71,6 +74,15 @@ func main() {
 	if err = m.site.SaveToDB(); err != nil {
 		errorExit("Unable to save site config to DB: " + err.Error())
 	}
+
+	// Save changes to the DB every 5 minutes
+	go func() {
+		for {
+			m.saveChanges()
+			time.Sleep(5 * time.Minute)
+		}
+	}()
+
 	initialize()
 
 	r = mux.NewRouter()
@@ -107,6 +119,17 @@ func main() {
 	http.Handle("/", r)
 
 	chain := alice.New(loggingHandler).Then(r)
+
+	// Set up a channel to intercept Ctrl+C for graceful shutdowns
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		// Save the changes when the app quits
+		fmt.Println("\nFinishing up...")
+		m.saveChanges()
+		os.Exit(0)
+	}()
 
 	fmt.Printf("Listening on port %d\n", m.site.Port)
 	log.Fatal(http.ListenAndServe("127.0.0.1:"+strconv.Itoa(m.site.Port), chain))

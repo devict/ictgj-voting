@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/br0xen/boltease"
 )
@@ -114,22 +115,25 @@ func (m *model) saveChanges() error {
 	}
 	defer m.closeDB()
 
-	if m.site.NeedsSave() {
-		if err = m.site.SaveToDB(); err != nil {
-			return err
-		}
+	//if m.site.NeedsSave() {
+	fmt.Println("Saving Site data to DB")
+	if err = m.site.SaveToDB(); err != nil {
+		return err
 	}
-	if m.jam.IsChanged {
-		if err = m.jam.SaveToDB(); err != nil {
-			return err
-		}
-		m.jam.IsChanged = false
+	//}
+	//if m.jam.IsChanged {
+	fmt.Println("Saving Jam data to DB")
+	if err = m.jam.SaveToDB(); err != nil {
+		return err
 	}
-	if m.clientsUpdated {
-		if err = m.SaveAllClients(); err != nil {
-			return err
-		}
-		m.clientsUpdated = false
+	m.jam.IsChanged = false
+	//}
+	//if m.clientsUpdated {
+	fmt.Println("Saving Client data to DB")
+	if err = m.SaveAllClients(); err != nil {
+		return err
 	}
+	m.clientsUpdated = false
+	//}
 	return nil
 }

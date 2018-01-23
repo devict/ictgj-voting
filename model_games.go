@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/pborman/uuid"
 )
@@ -45,12 +46,12 @@ func (gm *Game) RemoveScreenshot(ssId string) error {
 	for i, ss := range gm.Screenshots {
 		if ss.UUID == ssId {
 			idx = i
-			return nil
 		}
 	}
 	if idx < 0 {
 		return errors.New("Invalid Id")
 	}
+	fmt.Print("Removing Screenshot (", ssId, ") (IDX:", idx, ")\n")
 	gm.Screenshots = append(gm.Screenshots[:idx], gm.Screenshots[idx+1:]...)
 	return nil
 }

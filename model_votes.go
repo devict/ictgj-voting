@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -30,7 +31,10 @@ func NewVote(clId string, tm time.Time) (*Vote, error) {
 	}
 
 	vt := new(Vote)
+
+	vt.Timestamp = tm
 	vt.mPath = []string{"jam", "votes", clId, tm.Format(time.RFC3339)}
+
 	return vt, nil
 }
 
@@ -52,9 +56,9 @@ func (gj *Gamejam) GetVoteWithTimeString(clId, ts string) (*Vote, error) {
 }
 
 func (gj *Gamejam) GetVote(clId string, ts time.Time) (*Vote, error) {
-	for _, v := range gj.Votes {
-		if v.ClientId == clId && v.Timestamp == ts {
-			return &v, nil
+	for i := range gj.Votes {
+		if gj.Votes[i].ClientId == clId && gj.Votes[i].Timestamp == ts {
+			return &gj.Votes[i], nil
 		}
 	}
 	return nil, errors.New("Couldn't find requested vote")
@@ -96,6 +100,7 @@ func (gj *Gamejam) LoadAllVotes() []Vote {
 			continue
 		}
 		for _, t := range times {
+			fmt.Println("Loading Vote", cId, t)
 			if vt, err := gj.LoadVote(cId, t); err == nil {
 				ret = append(ret, *vt)
 			}
@@ -116,7 +121,7 @@ func (gj *Gamejam) LoadVote(clientId, t string) (*Vote, error) {
 		return nil, errors.New("Error creating vote: " + err.Error())
 	}
 	var choices []string
-	if choices, err = m.bolt.GetKeyList(vt.mPath); err != nil {
+	if choices, err = gj.m.bolt.GetKeyList(vt.mPath); err != nil {
 		return nil, errors.New("Error creating vote: " + err.Error())
 	}
 	for _, v := range choices {
@@ -124,8 +129,9 @@ func (gj *Gamejam) LoadVote(clientId, t string) (*Vote, error) {
 		var rank int
 		if rank, err = strconv.Atoi(v); err == nil {
 			ch.Rank = rank
-			ch.Team, _ = m.bolt.GetValue(vt.mPath, v)
-			vt.Choices = append(vt.Choices, *ch)
+			if ch.Team, err = gj.m.bolt.GetValue(vt.mPath, v); err == nil {
+				vt.Choices = append(vt.Choices, *ch)
+			}
 		}
 	}
 	return vt, nil

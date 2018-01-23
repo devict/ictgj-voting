@@ -20,13 +20,7 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 	teamId := vars["id"]
 	if teamId == "" {
 		// Games List
-		// TODO: We should be able to just pass m.jam to the template instead of a custom struct
-		type gamesPageData struct {
-			Teams []Team
-		}
-		gpd := new(gamesPageData)
-		gpd.Teams = m.jam.Teams
-		page.TemplateData = gpd
+		page.TemplateData = m.jam
 		page.SubTitle = "Games"
 		page.show("admin-games.html", w)
 	} else {
@@ -48,22 +42,50 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 					page.session.setFlashMessage("Team game updated", "success")
 				}
 				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+
 			case "screenshotupload":
-				if err := saveScreenshots(tm, req); err != nil {
+				var ss *Screenshot
+				tm, err := m.jam.GetTeamById(tm.UUID)
+				if err != nil {
 					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+					redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+				}
+				ss, err = ssFromRequest(tm, req)
+				if err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+					redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+				}
+				gm := tm.Game
+				gm.Screenshots = append(gm.Screenshots, *ss)
+				if err = m.jam.UpdateGame(tm.UUID, gm); err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				} else {
+					page.session.setFlashMessage("Screenshot Uploaded", "success")
 				}
 				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+
 			case "screenshotdelete":
-				var ss *Screenshot
 				var err error
 				ssid := vars["subid"]
-				if ss, err = NewScreenshot(tm.UUID, ssid); err != nil {
-					page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
+				tm, err := m.jam.GetTeamById(tm.UUID)
+				if err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+					redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+					break
 				}
-				if err = m.jam.DeleteScreenshot(ss); err != nil {
-					page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
+				gm := tm.Game
+				if err = gm.RemoveScreenshot(ssid); err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+					redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+					break
+				}
+				if err = m.jam.UpdateGame(tm.UUID, gm); err != nil {
+					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				} else {
+					page.session.setFlashMessage("Screenshot Removed", "success")
 				}
 				redirect("/admin/teams/"+tm.UUID+"#game", w, req)
+
 			}
 		} else {
 			page.session.setFlashMessage("Not a valid team id", "error")
@@ -72,13 +94,13 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 	}
 }
 
-func saveScreenshots(tm *Team, req *http.Request) error {
+func ssFromRequest(tm *Team, req *http.Request) (*Screenshot, error) {
 	var err error
 	var ss *Screenshot
 
 	file, hdr, err := req.FormFile("newssfile")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	extIdx := strings.LastIndex(hdr.Filename, ".")
 	fltp := "png"
@@ -89,29 +111,30 @@ func saveScreenshots(tm *Team, req *http.Request) error {
 	buf := new(bytes.Buffer)
 	// We convert everything to jpg
 	if err = jpeg.Encode(buf, mI, nil); err != nil {
-		return errors.New("Unable to encode image")
+		return nil, errors.New("Unable to encode image")
 	}
 	thm := resize.Resize(200, 0, mI, resize.Lanczos3)
 	thmBuf := new(bytes.Buffer)
 	var thmString string
 	if fltp == "gif" {
 		if err = gif.Encode(thmBuf, thm, nil); err != nil {
-			return errors.New("Unable to encode image")
+			return nil, errors.New("Unable to encode image")
 		}
 	} else {
 		if err = jpeg.Encode(thmBuf, thm, nil); err != nil {
-			return errors.New("Unable to encode image")
+			return nil, errors.New("Unable to encode image")
 		}
 	}
 	thmString = base64.StdEncoding.EncodeToString(thmBuf.Bytes())
 
 	if ss, err = NewScreenshot(tm.UUID, ""); err != nil {
-		return err
+		return nil, err
 	}
 
 	ss.Image = base64.StdEncoding.EncodeToString(buf.Bytes())
 	ss.Thumbnail = thmString
 	ss.Filetype = fltp
 
-	return m.jam.SaveScreenshot(ss)
+	return ss, nil
+	//return m.jam.SaveScreenshot(ss)
 }

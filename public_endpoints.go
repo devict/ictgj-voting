@@ -38,7 +38,8 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 		Timestamp string
 	}
 	vpd := new(votingPageData)
-	tms := m.jam.Teams
+	tms := make([]Team, len(m.jam.Teams))
+	copy(tms, m.jam.Teams)
 
 	// Randomize the team list
 	rand.Seed(time.Now().Unix())
@@ -173,6 +174,7 @@ func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 			page.SubTitle = "Team Management"
 			page.TemplateData = tm
 			page.show("public-teammgmt.html", w)
+
 		case "savemember":
 			m, err := NewTeamMember(tm.UUID, "")
 			if err != nil {
@@ -189,6 +191,7 @@ func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 				page.session.setFlashMessage(m.Name+" added to team!", "success")
 			}
 			redirect("/team/"+tm.UUID+"#members", w, req)
+
 		case "deletemember":
 			mbrId := req.FormValue("memberid")
 			err := tm.RemoveTeamMemberById(mbrId)
@@ -198,23 +201,36 @@ func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 				page.session.setFlashMessage("Team member removed", "success")
 			}
 			redirect("/team/"+tm.UUID, w, req)
+
 		case "savegame":
 			tm.Game.Name = req.FormValue("gamename")
 			tm.Game.Link = req.FormValue("gamelink")
 			tm.Game.Description = req.FormValue("gamedesc")
 			page.session.setFlashMessage("Team game updated", "success")
 			redirect("/team/"+tm.UUID, w, req)
+
 		case "screenshotupload":
-			if err := saveScreenshots(tm, req); err != nil {
+			ss, err := ssFromRequest(tm, req)
+			if err != nil {
 				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				redirect("/team/"+tm.UUID, w, req)
+			}
+			gm := tm.Game
+			gm.Screenshots = append(gm.Screenshots, *ss)
+			if err = m.jam.UpdateGame(tm.UUID, gm); err != nil {
+				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+			} else {
+				page.session.setFlashMessage("Screenshot Uploaded", "success")
 			}
 			redirect("/team/"+tm.UUID, w, req)
+
 		case "screenshotdelete":
 			ssid := vars["subid"]
 			if err := tm.Game.RemoveScreenshot(ssid); err != nil {
 				page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
 			}
 			redirect("/team/"+tm.UUID, w, req)
+
 		}
 	} else {
 		http.Error(w, "Page Not Found", 404)
