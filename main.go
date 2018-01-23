@@ -23,7 +23,10 @@ import (
 	"github.com/justinas/alice"
 )
 
+// AppName Application name
 const AppName = "gjvote"
+
+// DbName Database name, which is <AppName>.db
 const DbName = AppName + ".db"
 
 // pageData is stuff that changes per request
