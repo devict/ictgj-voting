@@ -12114,7 +12114,7 @@ XzHfrrS2uzLN6JsOkTvo3Iny7fxf2KYCxs3I30osvf4OAAD//yR+jxHtAwAA
 	"/templates/admin-votes.html": {
 		local:   "templates/admin-votes.html",
 		size:    848,
-		modtime: 1508506407,
+		modtime: 1516741087,
 		compressed: `
 H4sIAAAJbogA/3xSPW/cMAzd/SsI48b6DLRbIAsoLkuWDsGhu2wxOaGyZEg8A0WQ/15KtqPcRzOJfHoU
 Hx8ltJlhsCrGrg4Yz5ZiM3hHyjgMtazE6bs8nENAR/C83IuWsertDYJyrwg78w12Mzx0sD/iOFlF+KhI
