@@ -2,46 +2,52 @@ package main
 
 import "golang.org/x/crypto/bcrypt"
 
-// dbHasUser
+// These are all model functions that have to do with users
+// Unlike gamejam functions, we manipulate the DB directly
+// We want to make sure that we always use the most up-to-date user
+// information.
+
 // Returns true if there are any users in the database
-func (db *gjDatabase) hasUser() bool {
-	return len(db.getAllUsers()) > 0
+func (m *model) hasUser() bool {
+	return len(m.getAllUsers()) > 0
 }
 
-func (db *gjDatabase) getAllUsers() []string {
-	if err := db.open(); err != nil {
+func (m *model) getAllUsers() []string {
+	if err := m.openDB(); err != nil {
 		return []string{}
 	}
-	defer db.close()
+	defer m.closeDB()
 
-	usrs, err := db.bolt.GetBucketList([]string{"users"})
+	usrs, err := m.bolt.GetBucketList([]string{"users"})
 	if err != nil {
 		return []string{}
 	}
 	return usrs
 }
 
-func (db *gjDatabase) isValidUserEmail(email string) bool {
-	if err := db.open(); err != nil {
+// Is the given email one that is in our DB?
+func (m *model) isValidUserEmail(email string) bool {
+	if err := m.openDB(); err != nil {
 		return false
 	}
-	defer db.close()
+	defer m.closeDB()
 
 	usrPath := []string{"users", email}
-	_, err := db.bolt.GetValue(usrPath, "password")
+	_, err := m.bolt.GetValue(usrPath, "password")
 	return err == nil
 }
 
-func (db *gjDatabase) checkCredentials(email, pw string) error {
+// Is the email and pw given valid?
+func (m *model) checkCredentials(email, pw string) error {
 	var err error
-	if err = db.open(); err != nil {
+	if err = m.openDB(); err != nil {
 		return err
 	}
-	defer db.close()
+	defer m.closeDB()
 
 	var uPw string
 	usrPath := []string{"users", email}
-	if uPw, err = db.bolt.GetValue(usrPath, "password"); err != nil {
+	if uPw, err = m.bolt.GetValue(usrPath, "password"); err != nil {
 		return err
 	}
 	return bcrypt.CompareHashAndPassword([]byte(uPw), []byte(pw))
@@ -51,26 +57,26 @@ func (db *gjDatabase) checkCredentials(email, pw string) error {
 // Takes an email address and a password
 // Creates the user if it doesn't exist, encrypts the password
 // and updates it in the db
-func (db *gjDatabase) updateUserPassword(email, password string) error {
+func (m *model) updateUserPassword(email, password string) error {
 	cryptPw, cryptError := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if cryptError != nil {
 		return cryptError
 	}
-	if err := db.open(); err != nil {
+	if err := m.openDB(); err != nil {
 		return err
 	}
-	defer db.close()
+	defer m.closeDB()
 
 	usrPath := []string{"users", email}
-	return db.bolt.SetValue(usrPath, "password", string(cryptPw))
+	return m.bolt.SetValue(usrPath, "password", string(cryptPw))
 }
 
-func (db *gjDatabase) deleteUser(email string) error {
+func (m *model) deleteUser(email string) error {
 	var err error
-	if err = db.open(); err != nil {
+	if err = m.openDB(); err != nil {
 		return err
 	}
-	defer db.close()
+	defer m.closeDB()
 
-	return db.bolt.DeleteBucket([]string{"users"}, email)
+	return m.bolt.DeleteBucket([]string{"users"}, email)
 }

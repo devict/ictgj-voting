@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -17,7 +18,7 @@ func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 
 func handleMain(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
-	if db.getPublicSiteMode() == SiteModeWaiting {
+	if m.site.GetPublicMode() == SiteModeWaiting {
 		page.SubTitle = ""
 		page.show("public-waiting.html", w)
 	} else {
@@ -28,7 +29,7 @@ func handleMain(w http.ResponseWriter, req *http.Request) {
 func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
 	// Client authentication required
-	if (db.getAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
+	if (m.site.GetAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
 		page.show("unauthorized.html", w)
 		return
 	}
@@ -37,7 +38,8 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 		Timestamp string
 	}
 	vpd := new(votingPageData)
-	tms := db.getAllTeams()
+	tms := make([]Team, len(m.jam.Teams))
+	copy(tms, m.jam.Teams)
 
 	// Randomize the team list
 	rand.Seed(time.Now().Unix())
@@ -55,7 +57,7 @@ func loadVotingPage(w http.ResponseWriter, req *http.Request) {
 func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	page := initPublicPage(w, req)
 	// Client authentication required
-	if (db.getAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
+	if (m.site.GetAuthMode() == AuthModeAuthentication) && !page.ClientIsAuth {
 		page.show("unauthorized.html", w)
 		return
 	}
@@ -66,23 +68,40 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	ts := req.FormValue("timestamp")
 	timestamp, err := time.Parse(time.RFC3339, ts)
 	if err != nil {
-		page.session.setFlashMessage("Error parsing timestamp: "+ts, "error")
+		page.session.setFlashMessage("Error creating vote", "error")
+		fmt.Println("Error parsing timestamp: " + ts)
 		redirect("/", w, req)
 	}
-	client := db.getClient(page.ClientId)
-	if _, err := client.getVote(timestamp); err == nil {
+	client, err := m.GetClient(page.ClientId)
+	if err != nil {
+		client = NewClient(page.ClientId)
+	}
+
+	// voteSlice is an ordered string slice of the voters preferences
+	voteCSV := req.FormValue("uservote")
+	voteSlice := strings.Split(voteCSV, ",")
+
+	if _, err = m.jam.GetVote(client.UUID, timestamp); err == nil {
 		// Duplicate vote... Cancel it.
 		page.session.setFlashMessage("Duplicate vote!", "error")
 		redirect("/", w, req)
 	}
-	// voteSlice is an ordered string slice of the voters preferences
-	voteCSV := req.FormValue("uservote")
-	voteSlice := strings.Split(voteCSV, ",")
-	if err := client.saveVote(timestamp, voteSlice); err != nil {
-		page.session.setFlashMessage("Error Saving Vote: "+err.Error(), "error")
+
+	var vt *Vote
+	if vt, err = NewVote(client.UUID, timestamp); err != nil {
+		fmt.Println("Error creating vote: " + err.Error())
+		page.session.setFlashMessage("Error creating vote", "error")
+		redirect("/", w, req)
 	}
-	if newVote, err := client.getVote(timestamp); err == nil {
-		site.Votes = append(site.Votes, *newVote)
+	if err = vt.SetChoices(voteSlice); err != nil {
+		fmt.Println("Error creating vote: " + err.Error())
+		page.session.setFlashMessage("Error creating vote", "error")
+		redirect("/", w, req)
+	}
+	if err := m.jam.AddVote(vt); err != nil {
+		fmt.Println("Error adding vote: " + err.Error())
+		page.session.setFlashMessage("Error creating vote", "error")
+		redirect("/", w, req)
 	}
 	page.session.setFlashMessage("Vote Saved!", "success large fading")
 	redirect("/", w, req)
@@ -91,19 +110,22 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 func handleThumbnailRequest(w http.ResponseWriter, req *http.Request) {
 	// Thumbnail requests are open even without client authentication
 	vars := mux.Vars(req)
-	tm := db.getTeam(vars["teamid"])
-	if tm == nil {
+	tm, err := m.jam.GetTeamById(vars["teamid"])
+	if err != nil {
+		fmt.Println("handleThumbnailRequest: " + err.Error())
 		http.Error(w, "Couldn't find image", 404)
 		return
 	}
-	ss := tm.getScreenshot(vars["imageid"])
-	if ss == nil {
+	ss, err := tm.Game.GetScreenshot(vars["imageid"])
+	if err != nil {
+		fmt.Println("handleThumbnailRequest: " + err.Error())
 		http.Error(w, "Couldn't find image", 404)
 		return
 	}
 	w.Header().Set("Content-Type", "image/"+ss.Filetype)
 	dat, err := base64.StdEncoding.DecodeString(ss.Thumbnail)
 	if err != nil {
+		fmt.Println("handleThumbnailRequest: " + err.Error())
 		http.Error(w, "Couldn't find image", 404)
 		return
 	}
@@ -113,19 +135,22 @@ func handleThumbnailRequest(w http.ResponseWriter, req *http.Request) {
 func handleImageRequest(w http.ResponseWriter, req *http.Request) {
 	// Image requests are open even without client authentication
 	vars := mux.Vars(req)
-	tm := db.getTeam(vars["teamid"])
-	if tm == nil {
+	tm, err := m.jam.GetTeamById(vars["teamid"])
+	if err != nil {
+		fmt.Println("handleImageRequest: " + err.Error())
 		http.Error(w, "Couldn't find image", 404)
 		return
 	}
-	ss := tm.getScreenshot(vars["imageid"])
-	if ss == nil {
+	ss, err := tm.Game.GetScreenshot(vars["imageid"])
+	if err != nil {
+		fmt.Println("handleImageRequest: " + err.Error())
 		http.Error(w, "Couldn't find image", 404)
 		return
 	}
 	w.Header().Set("Content-Type", "image/"+ss.Filetype)
 	dat, err := base64.StdEncoding.DecodeString(ss.Image)
 	if err != nil {
+		fmt.Println("handleImageRequest: " + err.Error())
 		http.Error(w, "Couldn't find image", 404)
 		return
 	}
@@ -134,69 +159,78 @@ func handleImageRequest(w http.ResponseWriter, req *http.Request) {
 
 func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 	// Team Management pages are open even without client authentication
-	if db.getPublicSiteMode() == SiteModeVoting {
+	if m.site.GetPublicMode() == SiteModeVoting {
 		redirect("/", w, req)
 	}
 	page := initPublicPage(w, req)
 	vars := mux.Vars(req)
 	page.SubTitle = "Team Details"
 	teamId := vars["id"]
-	tm := db.getTeam(teamId)
-	if tm != nil {
+	tm, err := m.jam.GetTeamById(teamId)
+	if err == nil {
 		// Team self-management functions
 		switch vars["function"] {
 		case "":
 			page.SubTitle = "Team Management"
 			page.TemplateData = tm
 			page.show("public-teammgmt.html", w)
+
 		case "savemember":
-			m := newTeamMember(req.FormValue("newmembername"))
+			m, err := NewTeamMember(tm.UUID, "")
+			if err != nil {
+				page.session.setFlashMessage("Error adding team member: "+err.Error(), "error")
+				redirect("/team/"+tm.UUID+"#members", w, req)
+			}
+			m.Name = req.FormValue("newmembername")
 			m.SlackId = req.FormValue("newmemberslackid")
 			m.Twitter = req.FormValue("newmembertwitter")
 			m.Email = req.FormValue("newmemberemail")
-			if err := tm.updateTeamMember(m); err != nil {
+			if err := tm.AddTeamMember(m); err != nil {
 				page.session.setFlashMessage("Error adding team member: "+err.Error(), "error")
 			} else {
 				page.session.setFlashMessage(m.Name+" added to team!", "success")
 			}
-			refreshTeamsInMemory()
 			redirect("/team/"+tm.UUID+"#members", w, req)
+
 		case "deletemember":
 			mbrId := req.FormValue("memberid")
-			m := tm.getTeamMember(mbrId)
-			if m != nil {
-				if err := tm.deleteTeamMember(m); err != nil {
-					page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
-				} else {
-					page.session.setFlashMessage(m.Name+" deleted from team", "success")
-				}
+			err := tm.RemoveTeamMemberById(mbrId)
+			if err != nil {
+				page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
 			} else {
-				page.session.setFlashMessage("Couldn't find member to delete", "error")
+				page.session.setFlashMessage("Team member removed", "success")
 			}
-			refreshTeamsInMemory()
 			redirect("/team/"+tm.UUID, w, req)
+
 		case "savegame":
-			gm := newGame(tm.UUID)
-			gm.Name = req.FormValue("gamename")
-			gm.Link = req.FormValue("gamelink")
-			gm.Description = req.FormValue("gamedesc")
-			if err := gm.save(); err != nil {
+			tm.Game.Name = req.FormValue("gamename")
+			tm.Game.Link = req.FormValue("gamelink")
+			tm.Game.Description = req.FormValue("gamedesc")
+			page.session.setFlashMessage("Team game updated", "success")
+			redirect("/team/"+tm.UUID, w, req)
+
+		case "screenshotupload":
+			ss, err := ssFromRequest(tm, req)
+			if err != nil {
+				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
+				redirect("/team/"+tm.UUID, w, req)
+			}
+			gm := tm.Game
+			gm.Screenshots = append(gm.Screenshots, *ss)
+			if err = m.jam.UpdateGame(tm.UUID, gm); err != nil {
 				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
 			} else {
-				page.session.setFlashMessage("Team game updated", "success")
+				page.session.setFlashMessage("Screenshot Uploaded", "success")
 			}
 			redirect("/team/"+tm.UUID, w, req)
-		case "screenshotupload":
-			if err := saveScreenshots(tm, req); err != nil {
-				page.session.setFlashMessage("Error updating game: "+err.Error(), "error")
-			}
-			redirect("/team/"+tm.UUID, w, req)
+
 		case "screenshotdelete":
 			ssid := vars["subid"]
-			if err := tm.deleteScreenshot(ssid); err != nil {
+			if err := tm.Game.RemoveScreenshot(ssid); err != nil {
 				page.session.setFlashMessage("Error deleting screenshot: "+err.Error(), "error")
 			}
 			redirect("/team/"+tm.UUID, w, req)
+
 		}
 	} else {
 		http.Error(w, "Page Not Found", 404)

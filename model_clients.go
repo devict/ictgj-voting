@@ -1,154 +1,164 @@
 package main
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
-	"time"
+	"errors"
+
+	"github.com/pborman/uuid"
 )
 
+/**
+ * Client
+ * A client is a system that is connecting to the web server
+ */
 type Client struct {
 	UUID string
 	Auth bool
 	Name string
 	IP   string
+
+	mPath []string // The path in the DB to this client
 }
 
-func (db *currJamDb) getAllClients() []Client {
-	var ret []Client
+func NewClient(id string) *Client {
+	if id == "" {
+		id = uuid.New()
+	}
+	return &Client{
+		UUID:  id,
+		mPath: []string{"clients", id},
+	}
+}
+
+func (m *model) AddClient(cl *Client) error {
+	for i := range m.clients {
+		if m.clients[i].UUID == cl.UUID {
+			return errors.New("A client with that ID already exists")
+		}
+		if m.clients[i].IP == cl.IP {
+			return errors.New("A client with that IP already exists")
+		}
+		if m.clients[i].Name == cl.Name {
+			return errors.New("A client with that Name already exists")
+		}
+	}
+	m.clients = append(m.clients, *cl)
+	m.clientsUpdated = true
+	return nil
+}
+
+/**
+ * DB Functions
+ * These are generally just called when the app starts up, or when the periodic 'save' runs
+ */
+
+// Load all clients from the DB
+func (m *model) LoadAllClients() []Client {
 	var err error
-	if err = db.open(); err != nil {
+	var ret []Client
+	if err = m.openDB(); err != nil {
 		return ret
 	}
-	defer db.close()
+	defer m.closeDB()
 
 	var clientUids []string
-	if clientUids, err = db.bolt.GetBucketList([]string{"clients"}); err != nil {
+	cliPath := []string{"clients"}
+	if clientUids, err = m.bolt.GetBucketList(cliPath); err != nil {
 		return ret
 	}
 	for _, v := range clientUids {
-		if cl := db.getClient(v); cl != nil {
+		if cl := m.LoadClient(v); cl != nil {
 			ret = append(ret, *cl)
 		}
 	}
 	return ret
 }
 
-func (db *currJamDb) getClient(id string) *Client {
+// Load a client from the DB and return it
+func (m *model) LoadClient(clId string) *Client {
 	var err error
-	if err = db.open(); err != nil {
+	if err = m.openDB(); err != nil {
 		return nil
 	}
-	defer db.close()
+	defer m.closeDB()
 
-	cl := new(Client)
-	cl.UUID = id
-	cl.Auth, _ = db.bolt.GetBool([]string{"clients", id}, "auth")
-	cl.Name, _ = db.bolt.GetValue([]string{"clients", id}, "name")
-	cl.IP, _ = db.bolt.GetValue([]string{"clients", id}, "ip")
+	cl := NewClient(clId)
+	cl.Auth, _ = m.bolt.GetBool(cl.mPath, "auth")
+	cl.Name, _ = m.bolt.GetValue(cl.mPath, "name")
+	cl.IP, _ = m.bolt.GetValue(cl.mPath, "ip")
 	return cl
 }
 
-func (db *currJamDb) getClientByIp(ip string) *Client {
+// SaveAllClients saves all clients to the DB
+func (m *model) SaveAllClients() error {
 	var err error
-	if err = db.open(); err != nil {
+	if err = m.openDB(); err != nil {
 		return nil
 	}
-	defer db.close()
+	defer m.closeDB()
 
-	allClients := db.getAllClients()
-	for i := range allClients {
-		if allClients[i].IP == ip {
-			return &allClients[i]
+	for _, v := range m.clients {
+		if err = m.SaveClient(&v); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (c *Client) save() error {
+// SaveClient saves a client to the DB
+func (m *model) SaveClient(cl *Client) error {
 	var err error
-	if err = db.open(); err != nil {
+	if err = m.openDB(); err != nil {
 		return nil
 	}
-	defer db.close()
+	defer m.closeDB()
 
-	if err = db.bolt.SetBool([]string{"clients", c.UUID}, "auth", c.Auth); err != nil {
+	if err = m.bolt.SetBool(cl.mPath, "auth", cl.Auth); err != nil {
 		return err
 	}
-	if err = db.bolt.SetValue([]string{"clients", c.UUID}, "name", c.Name); err != nil {
+	if err = m.bolt.SetValue(cl.mPath, "name", cl.Name); err != nil {
 		return err
 	}
-	return db.bolt.SetValue([]string{"clients", c.UUID}, "ip", c.IP)
+	return m.bolt.SetValue(cl.mPath, "ip", cl.IP)
 }
 
-func (c *Client) getVotes() []Vote {
-	var ret []Vote
-	var err error
-	if err = db.open(); err != nil {
-		return ret
-	}
-	defer db.close()
+/**
+ * In Memory functions
+ * This is generally how the app accesses client data
+ */
 
-	var times []string
-	votesBkt := []string{"votes", c.UUID}
-	if times, err = db.bolt.GetBucketList(votesBkt); err != nil {
-		return ret
-	}
-	for _, t := range times {
-		var tm time.Time
-		if tm, err = time.Parse(time.RFC3339, t); err == nil {
-			var vt *Vote
-			if vt, err = c.getVote(tm); err == nil {
-				ret = append(ret, *vt)
-			} else {
-				fmt.Println(err)
-			}
+// Return a client by it's UUID
+func (m *model) GetClient(id string) (*Client, error) {
+	for i := range m.clients {
+		if m.clients[i].UUID == id {
+			return &m.clients[i], nil
 		}
 	}
-	return ret
+	return nil, errors.New("Invalid Id")
 }
 
-func (c *Client) getVote(timestamp time.Time) (*Vote, error) {
-	var err error
-	if err = db.open(); err != nil {
-		return nil, err
-	}
-	defer db.close()
-
-	vt := new(Vote)
-	vt.Timestamp = timestamp
-	vt.ClientId = c.UUID
-	votesBkt := []string{"votes", c.UUID, timestamp.Format(time.RFC3339)}
-	var choices []string
-	if choices, err = db.bolt.GetKeyList(votesBkt); err != nil {
-		// Couldn't find the vote...
-		return nil, err
-	}
-	for _, v := range choices {
-		ch := new(GameChoice)
-		var rank int
-
-		if rank, err = strconv.Atoi(v); err == nil {
-			ch.Rank = rank
-			ch.Team, err = db.bolt.GetValue(votesBkt, v)
-			vt.Choices = append(vt.Choices, *ch)
+// Return a client by it's IP address
+func (m *model) GetClientByIp(ip string) (*Client, error) {
+	for i := range m.clients {
+		if m.clients[i].IP == ip {
+			return &m.clients[i], nil
 		}
 	}
-	return vt, nil
+	return nil, errors.New("Invalid Ip")
 }
 
-func (c *Client) saveVote(timestamp time.Time, votes []string) error {
-	var err error
-	if err = db.open(); err != nil {
-		return nil
-	}
-	defer db.close()
-	// Make sure we don't clobber a duplicate vote
-	votesBkt := []string{"votes", c.UUID, timestamp.Format(time.RFC3339)}
-	for i := range votes {
-		if strings.TrimSpace(votes[i]) != "" {
-			db.bolt.SetValue(votesBkt, strconv.Itoa(i), votes[i])
+// Add/Update a client in the data model
+func (m *model) UpdateClient(cl *Client) {
+	var found bool
+	for i := range m.clients {
+		if m.clients[i].UUID == cl.UUID {
+			found = true
+			m.clients[i].Auth = cl.Auth
+			m.clients[i].Name = cl.Name
+			m.clients[i].IP = cl.IP
 		}
 	}
-	return err
+	if !found {
+		m.clients = append(m.clients, *cl)
+	}
+	m.clientsUpdated = true
 }

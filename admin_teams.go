@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	_ "image/gif"
@@ -9,10 +10,6 @@ import (
 
 	"github.com/gorilla/mux"
 )
-
-func refreshTeamsInMemory() {
-	site.Teams = db.getAllTeams()
-}
 
 func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) {
 	vars := mux.Vars(req)
@@ -23,17 +20,11 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		switch vars["function"] {
 		case "save":
 			name := req.FormValue("teamname")
-			if db.getTeamByName(name) != nil {
-				// A team with that name already exists
-				page.session.setFlashMessage("A team with the name "+name+" already exists!", "error")
-			} else {
-				if err := db.newTeam(name); err != nil {
-					page.session.setFlashMessage(err.Error(), "error")
-				} else {
-					page.session.setFlashMessage("Team "+name+" created!", "success")
-				}
+			tm := NewTeam("")
+			tm.Name = name
+			if err := m.jam.AddTeam(tm); err != nil {
+				page.session.setFlashMessage("Error adding team: "+err.Error(), "error")
 			}
-			refreshTeamsInMemory()
 			redirect("/admin/teams", w, req)
 		default:
 			page.SubTitle = "Add New Team"
@@ -41,57 +32,58 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		}
 	} else if teamId != "" {
 		// Functions for existing team
-		tm := db.getTeam(teamId)
+		tm, _ := m.jam.GetTeamById(teamId)
 		if tm != nil {
 			switch vars["function"] {
 			case "save":
-				tm.UUID = teamId
 				tm.Name = req.FormValue("teamname")
-				if err := tm.save(); err != nil {
-					page.session.setFlashMessage("Error updating team: "+err.Error(), "error")
-				} else {
-					page.session.setFlashMessage("Team Updated!", "success")
-				}
-				refreshTeamsInMemory()
+				page.session.setFlashMessage("Team Updated!", "success")
 				redirect("/admin/teams", w, req)
 			case "delete":
 				var err error
-				if err = tm.delete(); err != nil {
-					page.session.setFlashMessage("Error deleting team: "+err.Error(), "error")
+				if err = m.jam.RemoveTeamById(teamId); err != nil {
+					page.session.setFlashMessage("Error removing team: "+err.Error(), "error")
 				} else {
-					page.session.setFlashMessage("Team "+tm.Name+" Deleted", "success")
+					page.session.setFlashMessage("Team "+tm.Name+" Removed", "success")
 				}
-				refreshTeamsInMemory()
 				redirect("/admin/teams", w, req)
 			case "savemember":
 				mbrName := req.FormValue("newmembername")
-				mbr := newTeamMember(mbrName)
-				mbr.SlackId = req.FormValue("newmemberslackid")
-				mbr.Twitter = req.FormValue("newmembertwitter")
-				mbr.Email = req.FormValue("newmemberemail")
-				if err := tm.updateTeamMember(mbr); err != nil {
+				mbr, err := NewTeamMember(tm.UUID, "")
+				if err == nil {
+					mbr.Name = mbrName
+					mbr.SlackId = req.FormValue("newmemberslackid")
+					mbr.Twitter = req.FormValue("newmembertwitter")
+					mbr.Email = req.FormValue("newmemberemail")
+				}
+				if err := tm.AddTeamMember(mbr); err != nil {
 					page.session.setFlashMessage("Error adding team member: "+err.Error(), "error")
 				} else {
 					page.session.setFlashMessage(mbrName+" added to team!", "success")
 				}
-				refreshTeamsInMemory()
 				redirect("/admin/teams/"+teamId+"#members", w, req)
 			case "deletemember":
-				m := tm.getTeamMember(req.FormValue("memberid"))
-				if m != nil {
-					if err := tm.deleteTeamMember(m); err != nil {
-						page.session.setFlashMessage("Error deleting team member: "+err.Error(), "error")
-					} else {
-						page.session.setFlashMessage(m.Name+" deleted from team", "success")
-					}
-					refreshTeamsInMemory()
+				var err error
+				var mbr *TeamMember
+				if mbr, err = tm.GetTeamMemberById(req.FormValue("memberid")); err != nil {
+					fmt.Println("Error removing team member: " + err.Error())
+					page.session.setFlashMessage("Error deleting team member", "error")
+					redirect("/admin/teams/"+teamId+"#members", w, req)
+				}
+				if err = tm.RemoveTeamMemberById(mbr.UUID); err != nil {
+					fmt.Println("Error removing team member: " + err.Error())
+					page.session.setFlashMessage("Error deleting team member", "error")
 				} else {
-					page.session.setFlashMessage("Couldn't find team member to delete", "error")
+					page.session.setFlashMessage(mbr.Name+" deleted from team", "success")
 				}
 				redirect("/admin/teams/"+teamId+"#members", w, req)
 			default:
 				page.SubTitle = "Edit Team"
-				t := db.getTeam(teamId)
+				t, err := m.jam.GetTeamById(teamId)
+				if err != nil {
+					page.session.setFlashMessage("Error loading team: "+err.Error(), "error")
+					redirect("/admin/teams", w, req)
+				}
 				page.TemplateData = t
 				page.show("admin-editteam.html", w)
 			}
@@ -104,7 +96,7 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		type teamsPageData struct {
 			Teams []Team
 		}
-		page.TemplateData = teamsPageData{Teams: db.getAllTeams()}
+		page.TemplateData = m.jam
 		page.SubTitle = "Teams"
 		page.show("admin-teams.html", w)
 	}

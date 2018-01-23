@@ -1,11 +1,11 @@
 # Ignore the binaries
-gjvote
-gjvote.darwin64
-gjvote.linux386
-gjvote.linux64
-gjvote.linuxarm
-gjvote.win386.exe
-gjvote.win64.exe
+ictgj-voting
+ictgj-voting.darwin64
+ictgj-voting.linux386
+ictgj-voting.linux64
+ictgj-voting.linuxarm
+ictgj-voting.win386.exe
+ictgj-voting.win64.exe
 
 # Ignore the DBs
 *.db

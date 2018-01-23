@@ -15,6 +15,6 @@ func handleAdminArchive(w http.ResponseWriter, req *http.Request, page *pageData
 		type archivePageData struct {
 			Gamejams []Gamejam
 		}
-		apd := new(archivePageData)
+		//apd := new(archivePageData)
 	}
 }
