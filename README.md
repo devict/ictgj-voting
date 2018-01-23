@@ -31,12 +31,12 @@ These arguments only affect the current run of the application
 ```
 
 ## Prebuilt Binaries
-[Linux 64 bit](https://br0xen.com/dowload/ictgj-voting/gjvote.linux64 "Linux 64 bit build")  
-[Linux 32 bit](https://br0xen.com/download/ictgj-voting/gjvote.linux386 "Linux 32 bit build")  
-[Linux Arm](https://br0xen.com/download/ictgj-voting/gjvote.linuxarm "Linux Arm build")  
-[Mac OS](https://br0xen.com/download/ictgj-voting/gjvote.darwin64 "Mac OS build")  
-[Windows 64 bit](https://br0xen.com/download/ictgj-voting/gjvote.win64 "Windows 64 bit build")  
-[Windows 32 bit](https://br0xen.com/download/ictgj-voting/gjvote.win386 "Windows 32 bit build")  
+[Linux 64 bit](https://br0xen.com/dowload/ictgj-voting/ictgj-voting.linux64 "Linux 64 bit build")  
+[Linux 32 bit](https://br0xen.com/download/ictgj-voting/ictgj-voting.linux386 "Linux 32 bit build")  
+[Linux Arm](https://br0xen.com/download/ictgj-voting/ictgj-voting.linuxarm "Linux Arm build")  
+[Mac OS](https://br0xen.com/download/ictgj-voting/ictgj-voting.darwin64 "Mac OS build")  
+[Windows 64 bit](https://br0xen.com/download/ictgj-voting/ictgj-voting.win64 "Windows 64 bit build")  
+[Windows 32 bit](https://br0xen.com/download/ictgj-voting/ictgj-voting.win386 "Windows 32 bit build")  
 
 
 ## Building
@@ -48,10 +48,9 @@ go get github.com/devict/ictgj-voting
 ## Developing/Contributing
 ### Setup
 1. Fork this repo, rather than cloning directly.
-1. Run `go get github.com/mjibson/esc`
 1. Then `go get` your github fork, similarly to the command in the Building section above.
-1. Run `go generate`
-1. Run `go build`
+1. Make your changes
+1. If you changed any template files, run `go generate` to regenerate the `assets.go` file
 1. Make and commit your changes, then submit a Pull Request (PR) through GitHub from your fork to `github.com/devict/ictgj-voting`
 
 ### Notes
