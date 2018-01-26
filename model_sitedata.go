@@ -24,6 +24,8 @@ type siteData struct {
 	m       *model
 	mPath   []string // The path in the db to this site data
 	changed bool
+
+	sessionSecret string
 }
 
 // NewSiteData returns a siteData object with the default values
@@ -73,6 +75,9 @@ func (s *siteData) LoadFromDB() error {
 		s.ServerDir = serverDir
 	}
 	s.changed = false
+	if secret, _ := s.m.bolt.GetValue(s.mPath, "session-secret"); strings.TrimSpace(secret) != "" {
+		s.sessionSecret = secret
+	}
 	return nil
 }
 
@@ -102,6 +107,9 @@ func (s *siteData) SaveToDB() error {
 		return err
 	}
 	s.changed = false
+	if err = s.m.bolt.SetValue(s.mPath, "session-secret", s.sessionSecret); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -61,9 +61,7 @@ type menuItem struct {
 	Icon     string
 }
 
-var sessionSecret = "JCOP5e8ohkTcOzcSMe74"
-
-var sessionStore = sessions.NewCookieStore([]byte(sessionSecret))
+var sessionStore *sessions.CookieStore
 var r *mux.Router
 var m *model
 
@@ -87,6 +85,9 @@ func main() {
 	}()
 
 	initialize()
+
+	// We should have a session secret by now, initialize the store
+	sessionStore = sessions.NewCookieStore([]byte(m.site.sessionSecret))
 
 	r = mux.NewRouter()
 	r.StrictSlash(true)
@@ -219,6 +220,16 @@ func initialize() {
 		fmt.Println("Current Jam Name: " + m.jam.Name)
 	} else {
 		fmt.Println("No Jam Name Specified")
+	}
+
+	if m.site.sessionSecret == "" {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("A good session secret is like a good password")
+		fmt.Print("Create New Session Secret: ")
+		sessSc, _ := reader.ReadString('\n')
+		sessSc = strings.TrimSpace(sessSc)
+		m.site.sessionSecret = sessSc
+		assertError(m.site.SaveToDB())
 	}
 }
 
