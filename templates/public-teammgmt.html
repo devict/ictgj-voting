@@ -177,13 +177,19 @@
     // Check if game details have changed
     if(document.getElementById('gamename').value != '{{ .TemplateData.Game.Name }}') { return true; }
     if(document.getElementById('gamelink').value != '{{ .TemplateData.Game.Link }}') { return true; }
-    if(document.getElementById('gamedesc').value != '{{ .TemplateData.Game.Description }}') { return true; }
+    if(scrubString(document.getElementById('gamedesc').value) != scrubString('{{ .TemplateData.Game.Description }}')) { return true; }
     // Check if new member details have been entered
     if(document.getElementById('newmembername').value != '') { return true; }
     if(document.getElementById('newmemberslackid').value != '') { return true; }
     if(document.getElementById('newmembertwitter').value != '') { return true; }
     if(document.getElementById('newmemberemail').value != '') { return true; }
     return false;
+  }
+
+  function scrubString(inp) {
+    inp = inp.replace(/\r\n/g, "");
+    inp = inp.replace(/\n/g, "");
+    return inp
   }
 
   function revertChanges() {
