@@ -122,11 +122,13 @@ div.horizontal-scroll {
 
 img.thumbnail {
   height: 100px;
+  max-height: 100%;
+  max-width: 100%;
 }
 
 .thumbnail-container {
   display: block;
-  height: 120px;
+  height: 100%;
   background-color: #EEE;
   padding-top: 20px;
 }
@@ -228,7 +230,8 @@ table tfoot {
 }
 
 #modal-overlay>div {
-  width: 500px;
+  margin: 10% 10%;
+  width: 80%;
   margin: 100px auto;
   background-color: #FFF;
   border: 1px solid #000;
@@ -240,6 +243,11 @@ table tfoot {
 div#embiggenedScreenShot {
   cursor: pointer;
   background-color: #FFF;
+}
+
+div#embiggenedScreenShot>img{
+  max-width:100%;
+  max-height:100%;
 }
 
 div.fullscreen {

@@ -246,8 +246,8 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	var err error
 	var s *sessions.Session
 	if s, err = sessionStore.Get(req, m.site.SessionName); err != nil {
-		http.Error(w, err.Error(), 500)
-		return p
+		fmt.Println("Session error... Recreating.")
+		//http.Error(w, err.Error(), 500)
 	}
 	p.session = new(pageSession)
 	p.session.session = s
