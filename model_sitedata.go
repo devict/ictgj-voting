@@ -12,6 +12,7 @@ import (
  */
 type siteData struct {
 	Title       string
+	Ip          string
 	Port        int
 	SessionName string
 	ServerDir   string
@@ -32,6 +33,7 @@ type siteData struct {
 func NewSiteData(m *model) *siteData {
 	ret := new(siteData)
 	ret.Title = "ICT GameJam"
+	ret.Ip = "127.0.0.1"
 	ret.Port = 8080
 	ret.SessionName = "ict-gamejam"
 	ret.ServerDir = "./"
@@ -65,6 +67,9 @@ func (s *siteData) LoadFromDB() error {
 	if title, _ := s.m.bolt.GetValue(s.mPath, "title"); strings.TrimSpace(title) != "" {
 		s.Title = title
 	}
+	if ip, err := s.m.bolt.GetValue(s.mPath, "ip"); err == nil {
+		s.Ip = ip
+	}
 	if port, err := s.m.bolt.GetInt(s.mPath, "port"); err == nil {
 		s.Port = port
 	}
@@ -95,6 +100,9 @@ func (s *siteData) SaveToDB() error {
 	defer s.m.closeDB()
 
 	if err = s.m.bolt.SetValue(s.mPath, "title", s.Title); err != nil {
+		return err
+	}
+	if err = s.m.bolt.SetValue(s.mPath, "ip", s.Ip); err != nil {
 		return err
 	}
 	if err = s.m.bolt.SetInt(s.mPath, "port", s.Port); err != nil {

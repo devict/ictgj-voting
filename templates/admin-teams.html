@@ -8,19 +8,19 @@
   <thead>
       <tr>
           <th>Name</th>
-          <th>Management Link</th>
-          <th>Members</th>
-          <th>Game</th>
+          <th class="only-large">Management Link</th>
+          <th class="only-large">Members</th>
+          <th class="only-large">Game</th>
           <th></th>
       </tr>
   </thead>
   <tbody>
       {{ range $i, $v := .TemplateData.Teams }} 
       <tr>
-          <td>{{ $v.Name }}</td>
-          <td><a href="/team/{{ $v.UUID }}">{{ $v.UUID }}</a></td>
-          <td>{{ len $v.Members }}</td>
-          <td>{{ $v.Game.Name }}</td>
+          <td>{{ $v.Name }}<p class="only-small">{{ $v.Game.Name }}</p></td>
+          <td class="only-large"><a href="/team/{{ $v.UUID }}">{{ $v.UUID }}</a></td>
+          <td class="only-large">{{ len $v.Members }}</td>
+          <td class="only-large">{{ $v.Game.Name }}</td>
           <td>
             <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
             <a href="/admin/teams/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>

@@ -136,7 +136,7 @@ func main() {
 	}()
 
 	fmt.Printf("Listening on port %d\n", m.site.Port)
-	log.Fatal(http.ListenAndServe("127.0.0.1:"+strconv.Itoa(m.site.Port), chain))
+	log.Fatal(http.ListenAndServe(m.site.Ip+":"+strconv.Itoa(m.site.Port), chain))
 }
 
 func loadConfig() {
@@ -154,6 +154,9 @@ func loadConfig() {
 			case "-title":
 				m.site.Title = val
 				fmt.Print("Set site title: ", m.site.Title, "\n")
+			case "-ip":
+				m.site.Ip = val
+				fmt.Print("Set site IP: ", m.site.Ip, "\n")
 			case "-port":
 				var tryPort int
 				var err error

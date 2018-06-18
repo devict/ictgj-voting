@@ -141,9 +141,15 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 		Results  []Ranking
 	}
 	vpd := new(votePageData)
+	now := time.Now()
+	dayThresh := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	for i := range m.jam.Votes {
 		v := new(vpdVote)
-		v.Timestamp = m.jam.Votes[i].Timestamp.Format(time.RFC3339)
+		if m.jam.Votes[i].Timestamp.Before(dayThresh) {
+			v.Timestamp = m.jam.Votes[i].Timestamp.Format("Jan _2 15:04")
+		} else {
+			v.Timestamp = m.jam.Votes[i].Timestamp.Format(time.Kitchen)
+		}
 		v.ClientId = m.jam.Votes[i].ClientId
 		for _, choice := range m.jam.Votes[i].Choices {
 			for _, fndTm := range m.jam.Teams {
