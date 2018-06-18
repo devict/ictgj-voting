@@ -2,26 +2,11 @@
   <div>No games have been created</div>
 {{ else }}
   <div class="content">
-  Rank one or more games from your favorite to least favorite.
+    <p>First choose the games that you want to rank, then put them in order from your most favorite to least favorite.</p>
+    <p>Any games that you don't rank will be considered 'tied for last place'.</p>
   </div>
   <div class="content">
-    <h2>Your Choices</h2>
-    <table id="ranked-table" class="pure-table pure-table-bordered center">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Game Name</th>
-          <th>Team Name</th>
-          <th>Screenshots</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
-  <div class="content">
-    <h2>Unranked Games</h2>
+    <h2>1. Choose the games you want to rank</h2>
     <table id="unranked-table" class="pure-table pure-table-bordered center">
       <thead>
         <tr>
@@ -49,7 +34,24 @@
       </tbody>
     </table>
   </div>
+  <div class="content">
+    <h2>2. Order them from your most favorite to least favorite</h2>
+    <table id="ranked-table" class="pure-table pure-table-bordered center">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Game Name</th>
+          <th>Team Name</th>
+          <th>Screenshots</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
   <div class="content half">
+    <h2>3. Submit your vote!</h2>
     <form action="/vote" onsubmit="return validateVote();">
       <input id="uservote" type="hidden" name="uservote" value="" />
       <input id="timestamp" type="hidden" name="timestamp" value="{{.TemplateData.Timestamp}}" />
