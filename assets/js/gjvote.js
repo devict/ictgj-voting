@@ -1,3 +1,26 @@
+(function(){
+  document.onkeydown = function(evt) {
+    evt = evt || window.event;
+    var isEscape = false;
+    if("key" in evt) {
+      isEscape = (evt.key == "Escape" || evt.key == "Esc");
+    } else {
+      isEscape = (evt.keyCode == 27);
+    }
+    if(isEscape) {
+      toggleAdminPanel();
+    }
+  }
+  document.querySelector('.menu-button').onclick = function() {
+    var mnu = document.querySelector('#menu .menu-container');
+    if(mnu.style.display == 'inline-block') {
+      mnu.style.display = 'none';
+    } else {
+      mnu.style.display = 'inline-block';
+    }
+  }
+})()
+
 function toggleAdminPanel() {
   var menu = document.querySelector('#menu');
   if(menu.classList.contains('hidden')) {
@@ -6,20 +29,6 @@ function toggleAdminPanel() {
   } else {
     document.querySelector('#layout>.content').style.marginLeft='0';
     menu.classList.add('hidden');
-  }
-}
-
-
-document.onkeydown = function(evt) {
-  evt = evt || window.event;
-  var isEscape = false;
-  if("key" in evt) {
-    isEscape = (evt.key == "Escape" || evt.key == "Esc");
-  } else {
-    isEscape = (evt.keyCode == 27);
-  }
-  if(isEscape) {
-    toggleAdminPanel();
   }
 }
 

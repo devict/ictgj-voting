@@ -4,20 +4,16 @@
 <table id="clients-table" class="sortable pure-table pure-table-bordered center">
   <thead>
       <tr>
-          <th>Friendly Name</th>
-          <th>Client ID</th>
-          <th>Last Known IP</th>
-          <th>Authenticated</th>
-          <th></th>
+          <th>Auth</th>
+          <th>Name</th>
+          <th class="only-large">Client ID</th>
+          <th class="only-large">Last Known IP</th>
+          <th class="only-large">Authenticated</th>
       </tr>
   </thead>
   <tbody>
       {{ range $i, $v := .TemplateData.Clients }} 
       <tr>
-          <td>{{ $v.Name }}</td>
-          <td>{{ $v.UUID }}</td>
-          <td>{{ $v.IP }}</td>
-          <td>{{ if $v.Auth }} Yes {{ else }} No {{ end }}</td>
           <td>
             {{ if $v.Auth }}
             <a href="/admin/clients/{{ $v.UUID }}/deauth" class="primary"><i class="fa fa-2 fa-toggle-on"></i></a>
@@ -25,6 +21,10 @@
             <a href="/admin/clients/{{ $v.UUID }}/auth" class="error"><i class="fa fa-2 fa-toggle-off"></i></a>
             {{ end }}
           </td>
+          <td>{{ $v.Name }}<p class="only-small">({{ $v.UUID }})</p></td>
+          <td class="only-large">{{ $v.UUID }}</td>
+          <td class="only-large">{{ $v.IP }}</td>
+          <td class="only-large">{{ if $v.Auth }} Yes {{ else }} No {{ end }}</td>
       </tr>
       {{ end }}
   </tbody>

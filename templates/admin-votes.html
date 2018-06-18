@@ -9,16 +9,15 @@
 <table id="votes-table" class="sortable pure-table pure-table-bordered center">
   <thead>
     <tr>
-      <th>Timestamp</th>
-      <th>Client ID</th>
+      <th>Time</th>
       <th>Rankings</th>
+      <th class="only-large">Client ID</th>
     </tr>
   </thead>
   <tbody>
     {{ range $i, $v := .TemplateData.AllVotes }}
     <tr>
       <td>{{ $v.Timestamp }}</td>
-      <td>{{ $v.ClientId }}</td>
       <td>
         <ol>
         {{ range $ci, $cv := $v.Choices }}
@@ -26,6 +25,7 @@
         {{ end }}
         </ol>
       </td>
+      <td class="only-large">{{ $v.ClientId }}</td>
     </tr>
     {{ end }}
   </tbody>
