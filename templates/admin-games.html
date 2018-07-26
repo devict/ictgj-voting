@@ -5,15 +5,15 @@
   <thead>
     <tr>
       <th>Game Name</th>
-      <th>Team Name</th>
+      <th class="only-large">Team Name</th>
       <th>Screenshots</th>
     </tr>
   </thead>
   <tbody>
     {{ range $i, $v := .TemplateData.Teams }} 
     <tr>
-      <td>{{ $v.Game.Name }}</td>
-      <td>{{ $v.Name }}</td>
+      <td>{{ $v.Game.Name }}<p class="only-small">by<br />{{ $v.Name }}</p></td>
+      <td class="only-large">{{ $v.Name }}</td>
       <td>{{ len $v.Game.Screenshots }}</td>
     </tr>
     {{ end }}

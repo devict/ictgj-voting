@@ -1,10 +1,10 @@
 {{ $uuid := .TemplateData.UUID }}
 <div class="center">
-  <div>
+  <div class="team-management-buttons">
     <h3>Team Management</h3>
-    <button id="edit-team-button" onclick="javascript:gotoTeamTab();" class="pure-button-toggle-first pure-button pure-button-primary">Team Details</button>
-    <button id="edit-game-button" onclick="javascript:gotoTeamGameTab();" class="pure-button-toggle-middle pure-button">Game Details</button>
-    <button id="edit-team-members-button" onclick="javascript:gotoTeamMemberTab();" class="pure-button-toggle-last pure-button">Team Members</button>
+    <button id="edit-team-button" onclick="javascript:gotoTeamTab();" class="pure-button-toggle-first pure-button pure-button-primary">Team Details</button><br class="only-small" />
+    <button id="edit-game-button" onclick="javascript:gotoTeamGameTab();" class="pure-button-toggle-middle pure-button">Game Details</button><br class="only-small" />
+    <button id="edit-team-members-button" onclick="javascript:gotoTeamMemberTab();" class="pure-button-toggle-last pure-button">Team Members</button><br class="only-small" />
   </div>
   <div id="edit-team-tab" class="left">
     <form class="pure-form pure-form-aligned" action="/admin/teams/{{ $uuid }}/save" method="POST">
@@ -16,10 +16,10 @@
             <input id="teamname" name="teamname" value="{{ .TemplateData.Name }}" placeholder="Team Name">
           </div>
         </div>
-        <div class="pure-control-group reset-pull">
-          <a href="/admin/teams" class="pull-left space pure-button pure-button-plain">Cancel</a>
-          <button type="submit" class="pull-right space pure-button pure-button-primary">Update Team</button>
-          <button type="button" id="btnDeleteTeam" class="pull-right space pure-button pure-button-error">Delete Team</button>
+        <div class="pure-control-group team-management-buttons">
+          <a href="/admin/teams" class="pure-button pure-button-plain">Cancel</a>
+          <button type="submit" class="pure-button pure-button-primary">Update Team</button>
+          <button type="button" id="btnDeleteTeam" class="pure-button pure-button-error">Delete Team</button>
         </div>
       </fieldset>
     </form>
@@ -73,9 +73,9 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Slack ID</th>
-          <th>Twitter</th>
-          <th>Email</th>
+          <th class="only-large">Slack ID</th>
+          <th class="only-large">Twitter</th>
+          <th class="only-large">Email</th>
           <th>Remove</th>
         </tr>
       </thead>
@@ -83,9 +83,9 @@
         {{ range $i, $v := .TemplateData.Members }}
         <tr>
           <td>{{ $v.Name }}</td>
-          <td>{{ $v.SlackId }}</td>
-          <td>{{ $v.Twitter }}</td>
-          <td>{{ $v.Email }}</td>
+          <td class="only-large">{{ $v.SlackId }}</td>
+          <td class="only-large">{{ $v.Twitter }}</td>
+          <td class="only-large">{{ $v.Email }}</td>
           <td>
             <form action="/admin/teams/{{ $uuid }}/deletemember" method="POST">
               <input type="hidden" name="memberid" value="{{ $v.UUID }}"/>
