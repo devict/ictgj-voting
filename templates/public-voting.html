@@ -17,7 +17,7 @@
         </tr>
       </thead>
       <tbody>
-        {{ range $i, $v := .TemplateData.Teams }} 
+        {{ range $i, $v := .TemplateData.Teams }}
         <tr id="teamrow-{{$v.UUID}}" data-teamid="{{$v.UUID}}">
           <td class="unranked-actions"><a class="pure-button pure-button-primary" href="javascript:moveToRanked('{{$v.UUID}}');"><i class="fa fa-plus"></i> Add to Vote</a></td>
           <td class="voting-col game-name">{{ $v.Game.Name }}</td>
@@ -26,7 +26,11 @@
             {{ if not $v.Game.Screenshots }}
             <i class="fa fa-image"></i> (No Screenshots)
             {{ else }}
-            <a class="primary" tabindex="-1" href="javascript:showScreenshots('{{$v.UUID}}');"><i class="fa fa-image"></i> ({{ len $v.Game.Screenshots }}) Click to View</a>
+            {{ $ss := index $v.Game.Screenshots 0 }}
+            <a class="primary" tabindex="-1" href="javascript:showScreenshots('{{$v.UUID}}');">
+              <img height="50" src="data:image/{{ $ss.Filetype }};base64,{{ $ss.Thumbnail }}" /><br />
+              <i class="fa fa-image"></i> ({{ len $v.Game.Screenshots }}) Click to View
+            </a>
             {{ end }}
           </td>
         </tr>
