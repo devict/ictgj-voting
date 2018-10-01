@@ -54,14 +54,39 @@
       </tbody>
     </table>
   </div>
-  <div class="content half">
-    <h2>3. Submit your vote!</h2>
-    <form action="/vote" onsubmit="return validateVote();">
+  <form action="/vote" onsubmit="return validateVote();">
+    <div class="content half">
+      <h2>3. Additional Information</h2>
       <input id="uservote" type="hidden" name="uservote" value="" />
       <input id="timestamp" type="hidden" name="timestamp" value="{{.TemplateData.Timestamp}}" />
-      <button class="pure-button pure-button-primary space-vertical pull-right" type="submit">Submit Vote!</button>
-    </form>
-  </div>
+      <div class="optionalfield">
+        <label for="discovery">How did you discover the GameJam?</label><br />
+        <input id="discovery" type="text" name="discovery" style="width:100%" />
+      </div>
+      <div class="optionalfield">
+        <label for="voterstatus">Are you a:</label><br />
+        <div>
+          <input type="radio" id="participant"
+                 name="voterstatus" value="participant" />
+          <label for="participant">Participant</label>
+        </div>
+        <div>
+          <input type="radio" id="volunteer"
+                 name="voterstatus" value="volunteer" />
+          <label for="volunteer">Volunteer</label>
+        </div>
+        <div>
+          <input type="radio" id="visitor"
+                 name="voterstatus" value="visitor" checked />
+          <label for="visitor">Visitor</label>
+        </div>
+      </div>
+    </div>
+    <div class="content half">
+      <h2>4. Submit your vote!</h2>
+        <button class="pure-button pure-button-primary space-vertical" type="submit">Submit Vote!</button>
+    </div>
+  </form>
   {{ range $i, $v := .TemplateData.Teams }} 
   <div class="pure-control-group" id="screenshots-{{ $v.UUID }}" style="display:none;">
     <h3>{{ $v.Game.Name }} by {{ $v.Name }}</h3>

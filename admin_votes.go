@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -132,15 +133,19 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 	page.SubTitle = "Votes"
 
 	type vpdVote struct {
-		Timestamp string
-		ClientId  string
-		Choices   []Team
+		Timestamp   string
+		ClientId    string
+		Choices     []Team
+		VoterStatus string
+		Discovery   string
 	}
 	type votePageData struct {
-		AllVotes []vpdVote
-		Results  []Ranking
+		AllVotes      []vpdVote
+		Results       []Ranking
+		VoterStatuses map[string]int
 	}
 	vpd := new(votePageData)
+	vpd.VoterStatuses = make(map[string]int)
 	now := time.Now()
 	dayThresh := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	for i := range m.jam.Votes {
@@ -159,6 +164,11 @@ func handleAdminVotes(w http.ResponseWriter, req *http.Request, page *pageData) 
 				}
 			}
 		}
+		v.VoterStatus = m.jam.Votes[i].VoterStatus
+		if strings.TrimSpace(v.VoterStatus) != "" {
+			vpd.VoterStatuses[v.VoterStatus]++
+		}
+		v.Discovery = m.jam.Votes[i].Discovery
 		vpd.AllVotes = append(vpd.AllVotes, *v)
 	}
 	vpd.Results = getCondorcetResult()

@@ -15,9 +15,11 @@ type GameChoice struct {
 
 // A Vote is a collection of game rankings
 type Vote struct {
-	Timestamp time.Time
-	ClientId  string // UUID of client
-	Choices   []GameChoice
+	Timestamp   time.Time
+	ClientId    string // UUID of client
+	Choices     []GameChoice
+	VoterStatus string
+	Discovery   string
 
 	mPath []string // The path in the DB to this team
 }
@@ -134,6 +136,12 @@ func (gj *Gamejam) LoadVote(clientId, t string) (*Vote, error) {
 			}
 		}
 	}
+	if vt.VoterStatus, err = gj.m.bolt.GetValue(vt.mPath, "voterstatus"); err != nil {
+		vt.VoterStatus = ""
+	}
+	if vt.Discovery, err = gj.m.bolt.GetValue(vt.mPath, "discovery"); err != nil {
+		vt.Discovery = ""
+	}
 	return vt, nil
 }
 
@@ -147,5 +155,7 @@ func (gj *Gamejam) SaveVote(vt *Vote) error {
 	for _, v := range vt.Choices {
 		m.bolt.SetValue(vt.mPath, strconv.Itoa(v.Rank), v.Team)
 	}
+	m.bolt.SetValue(vt.mPath, "voterstatus", vt.VoterStatus)
+	m.bolt.SetValue(vt.mPath, "discovery", vt.Discovery)
 	return nil
 }

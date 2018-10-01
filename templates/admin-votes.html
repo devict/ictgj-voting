@@ -5,12 +5,18 @@
     {{ $v.Rank }}: {{ $tv.Name }}<br />
   {{ end }}
 {{ end }}
+<h2>Votes by Voter Type</h2>
+{{ range $k, $v := .TemplateData.VoterStatuses }}
+  {{ $k }}: {{ $v }}<br />
+{{ end }}
 </div>
 <table id="votes-table" class="sortable pure-table pure-table-bordered center">
   <thead>
     <tr>
       <th>Time</th>
       <th>Rankings</th>
+      <th>Voter Status</th>
+      <th>Discovery</th>
       <th class="only-large">Client ID</th>
     </tr>
   </thead>
@@ -25,13 +31,15 @@
         {{ end }}
         </ol>
       </td>
+      <td>{{ $v.VoterStatus }}</td>
+      <td>{{ $v.Discovery }}</td>
       <td class="only-large">{{ $v.ClientId }}</td>
     </tr>
     {{ end }}
   </tbody>
   <tfoot>
     <tr>
-      <td class="left" colspan="3">{{ len .TemplateData.AllVotes }} Total Votes</td>
+      <td class="left" colspan="5">{{ len .TemplateData.AllVotes }} Total Votes</td>
     </tr>
   </tfoot>
 </table>
