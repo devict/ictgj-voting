@@ -214,6 +214,7 @@ func handleTeamMgmtRequest(w http.ResponseWriter, req *http.Request) {
 			tm.Game.Name = req.FormValue("gamename")
 			tm.Game.Link = req.FormValue("gamelink")
 			tm.Game.Description = req.FormValue("gamedesc")
+			tm.Game.Framework = req.FormValue("gameframework")
 			page.session.setFlashMessage("Team game updated", "success")
 			redirect("/team/"+tm.UUID, w, req)
 

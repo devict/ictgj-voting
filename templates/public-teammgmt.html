@@ -27,6 +27,10 @@
           <label class="control-label" for="gamedesc">Description</label>
           <textarea id="gamedesc" name="gamedesc" placeholder="Description...">{{ .TemplateData.Game.Description }}</textarea>
         </div>
+        <div class="pure-control-group">
+          <label class="control-label" for="gameframework">Framework/Engine</label>
+          <input id="gameframework" name="gameframework" value="{{ .TemplateData.Game.Framework }}" placeholder="Game Framework/Engine">
+        </div>
         <div class="pure-control-group reset-pull">
           <a href="/team/{{ $uuid }}" class="pull-left space pure-button pure-button-plain">Cancel</a>
           <button type="submit" class="pull-right space pure-button pure-button-primary">Update Game</button>
