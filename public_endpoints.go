@@ -81,6 +81,11 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 	voteCSV := req.FormValue("uservote")
 	voteSlice := strings.Split(voteCSV, ",")
 
+	// Voter Status should be either 'participant', 'volunteer', or 'visitor'
+	voterStatus := req.FormValue("voterstatus")
+	// Discovery is how the voter found out about the gamejam
+	discovery := req.FormValue("discovery")
+
 	if _, err = m.jam.GetVote(client.UUID, timestamp); err == nil {
 		// Duplicate vote... Cancel it.
 		page.session.setFlashMessage("Duplicate vote!", "error")
@@ -98,6 +103,9 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 		page.session.setFlashMessage("Error creating vote", "error")
 		redirect("/", w, req)
 	}
+	vt.VoterStatus = voterStatus
+	vt.Discovery = discovery
+
 	if err := m.jam.AddVote(vt); err != nil {
 		fmt.Println("Error adding vote: " + err.Error())
 		page.session.setFlashMessage("Error creating vote", "error")

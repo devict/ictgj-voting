@@ -45,6 +45,10 @@ div.half {
   background-color: #DD0000;
 }
 
+div.optionalfield {
+  margin: 2em;
+}
+
 
 input.file {
   padding: .5em .6em;
@@ -335,9 +339,6 @@ input.larger {
 
 /* Starting at Small, horizontal */
 @media screen and (min-width: 35.5em) {
-  div.content {
-    margin-left: 150px;
-  }
   div.pure-control-group label.control-label {
     text-align: left;
   }
