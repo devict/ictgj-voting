@@ -35,6 +35,7 @@ func handleAdminGames(w http.ResponseWriter, req *http.Request, page *pageData) 
 				}
 				gm.Name = req.FormValue("gamename")
 				gm.Link = req.FormValue("gamelink")
+				gm.Framework = req.FormValue("gameframework")
 				gm.Description = req.FormValue("gamedesc")
 				if err := m.jam.UpdateGame(tm.UUID, gm); err != nil {
 					page.session.setFlashMessage("Error updating game: "+err.Error(), "error")

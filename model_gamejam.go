@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -66,6 +67,7 @@ func (gj *Gamejam) SaveToDB() error {
 	}
 	// Save all Teams
 	for _, tm := range gj.Teams {
+		fmt.Println("Saving Team " + tm.Name + " data to DB")
 		if err := gj.SaveTeam(&tm); err != nil {
 			errs = append(errs, err)
 		}

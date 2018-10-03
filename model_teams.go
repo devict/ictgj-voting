@@ -237,6 +237,7 @@ func (gj *Gamejam) SaveTeam(tm *Team) error {
 	}
 
 	// Save team game
+	fmt.Println("> Saving game " + tm.Game.Name + " data to DB")
 	return gj.SaveGame(tm.Game)
 }
 

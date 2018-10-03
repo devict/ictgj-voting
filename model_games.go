@@ -16,6 +16,7 @@ type Game struct {
 	TeamId      string
 	Link        string
 	Description string
+	Framework   string
 	Screenshots []Screenshot
 
 	mPath []string // The path in the DB to this game
@@ -107,6 +108,9 @@ func (gj *Gamejam) LoadTeamGame(tmId string) (*Game, error) {
 	if gm.Link, err = gj.m.bolt.GetValue(gm.mPath, "link"); err != nil {
 		gm.Link = ""
 	}
+	if gm.Framework, err = gj.m.bolt.GetValue(gm.mPath, "framework"); err != nil {
+		gm.Framework = ""
+	}
 
 	// Now get the game screenshots
 	gm.Screenshots = gj.LoadTeamGameScreenshots(tmId)
@@ -195,6 +199,9 @@ func (gj *Gamejam) SaveGame(gm *Game) error {
 		return err
 	}
 	if err := gj.m.bolt.SetValue(gm.mPath, "description", gm.Description); err != nil {
+		return err
+	}
+	if err := gj.m.bolt.SetValue(gm.mPath, "framework", gm.Framework); err != nil {
 		return err
 	}
 	if err := gj.m.bolt.MkBucketPath(append(gm.mPath, "screenshots")); err != nil {
