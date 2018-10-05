@@ -17,12 +17,18 @@ func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 }
 
 func handleMain(w http.ResponseWriter, req *http.Request) {
-	page := initPublicPage(w, req)
 	if m.site.GetPublicMode() == SiteModeWaiting {
+		page := initPublicPage(w, req)
 		page.SubTitle = ""
 		page.show("public-waiting.html", w)
 	} else {
-		loadVotingPage(w, req)
+		vars := mux.Vars(req)
+		switch vars["function"] {
+		case "":
+			loadVotingPage(w, req)
+		case "vote":
+			handlePublicSaveVote(w, req)
+		}
 	}
 }
 
@@ -111,8 +117,9 @@ func handlePublicSaveVote(w http.ResponseWriter, req *http.Request) {
 		page.session.setFlashMessage("Error creating vote", "error")
 		redirect("/", w, req)
 	}
-	page.session.setFlashMessage("Vote Saved!", "success large fading")
-	redirect("/", w, req)
+	//page.session.setFlashMessage("Vote Saved!", "success large fading")
+	//redirect("/", w, req)
+	page.show("public-votedone.html", w)
 }
 
 func handleThumbnailRequest(w http.ResponseWriter, req *http.Request) {

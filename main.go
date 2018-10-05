@@ -79,8 +79,8 @@ func main() {
 	// Save changes to the DB every 5 minutes
 	go func() {
 		for {
-			m.saveChanges()
 			time.Sleep(5 * time.Minute)
+			m.saveChanges()
 		}
 	}()
 
@@ -97,19 +97,6 @@ func main() {
 	}
 	r.PathPrefix("/assets/").Handler(http.FileServer(FS(m.site.DevMode)))
 
-	// Public Subrouter
-	pub := r.PathPrefix("/").Subrouter()
-	pub.HandleFunc("/", handleMain)
-	pub.HandleFunc("/vote", handlePublicSaveVote)
-	pub.HandleFunc("/image/{teamid}/{imageid}", handleImageRequest)
-	pub.HandleFunc("/thumbnail/{teamid}/{imageid}", handleThumbnailRequest)
-	pub.HandleFunc("/team/{id}", handleTeamMgmtRequest)
-	pub.HandleFunc("/team/{id}/{function}", handleTeamMgmtRequest)
-	pub.HandleFunc("/team/{id}/{function}/{subid}", handleTeamMgmtRequest)
-
-	// API Subrouter
-	//api := r.PathPrefix("/api").Subtrouter()
-
 	// Admin Subrouter
 	admin := r.PathPrefix("/admin").Subrouter()
 	admin.HandleFunc("/", handleAdmin)
@@ -120,6 +107,18 @@ func main() {
 	admin.HandleFunc("/{category}/{id}/{function}", handleAdmin)
 	admin.HandleFunc("/{category}/{id}/{function}/{subid}", handleAdmin)
 
+	// Public Subrouter
+	pub := r.PathPrefix("/").Subrouter()
+	pub.HandleFunc("/", handleMain)
+	pub.HandleFunc("/{function}", handleMain)
+	pub.HandleFunc("/image/{teamid}/{imageid}", handleImageRequest)
+	pub.HandleFunc("/thumbnail/{teamid}/{imageid}", handleThumbnailRequest)
+	pub.HandleFunc("/team/{id}", handleTeamMgmtRequest)
+	pub.HandleFunc("/team/{id}/{function}", handleTeamMgmtRequest)
+	pub.HandleFunc("/team/{id}/{function}/{subid}", handleTeamMgmtRequest)
+
+	// API Subrouter
+	//api := r.PathPrefix("/api").Subtrouter()
 	http.Handle("/", r)
 
 	chain := alice.New(loggingHandler).Then(r)
