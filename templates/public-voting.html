@@ -174,7 +174,7 @@ function moveToRanked(tmUUID) {
   // First, find the team's row
   var rows = snack.wrap('#teamrow-'+tmUUID);
   if(rows.length > 0) {
-    var row = rows[0];
+    var row = rows[0].cloneNode(true);
     var delCell = row.getElementsByClassName('unranked-actions');
     if(delCell.length > 0) {
       delCell = delCell[0];
@@ -186,8 +186,21 @@ function moveToRanked(tmUUID) {
     row.prepend(rankTd);
     row.append(createRankedActionsTd(tmUUID));
     tbody.append(row)
+    rows[0].id='teamrow-'+tmUUID+'-remove';
+    var addBtn = rows[0].querySelector('.unranked-actions a');
+    rows[0].style.opacity=0.25;
+    addBtn.innerText = 'Added!';
+    addBtn.href = '';
+
+    setTimeout(function(){
+      rows[0].remove();
+    },500);
   }
   updateView();
+}
+
+function slideRowUp(rowid) {
+  var row = document.querySelector('#'+rowid);
 }
 
 function moveRankedUp(tmUUID) {
@@ -384,17 +397,11 @@ function createRankedActionsTd(tmUUID) {
 function createUnrankedActionsTd(tmUUID) {
   var td = document.createElement('td');
   td.classList.add('unranked-actions');
-  var addBtn = document.createElement('button');
+  var addBtn = document.createElement('a');
   addBtn.dataset.teamid=tmUUID
   addBtn.classList.add('pure-button', 'pure-button-toggle-last', 'pure-button-primary');
   addBtn.innerHTML = '<i class="fa fa-plus"></i> Add to Vote';
-  var params = {
-    node: addBtn,
-    event: 'click'
-  }
-  snack.listener(params, function (){
-    moveToRanked(addBtn.dataset.teamid);
-  })
+  addBtn.href = "javascript:moveToRanked('"+tmUUID+"');";
   td.appendChild(addBtn);
   return td;
 }
