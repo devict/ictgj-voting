@@ -17,6 +17,7 @@ type model struct {
 	site    *siteData // Configuration data for the site
 	jam     *Gamejam  // The currently active gamejam
 	clients []Client  // Web clients that have connected to the server
+	archive *Archive  // The archive of past game jams
 
 	clientsUpdated bool
 }
@@ -61,6 +62,9 @@ func NewModel() (*model, error) {
 
 	// Load web clients
 	m.clients = m.LoadAllClients()
+
+	// Load the archives
+	m.archive = m.LoadArchive()
 
 	return m, nil
 }
