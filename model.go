@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/br0xen/boltease"
 )
@@ -30,7 +31,11 @@ func NewModel() (*model, error) {
 	var err error
 	m := new(model)
 
-	m.dbFileName = DbName
+	// make sure the data directory exists
+	if err = os.MkdirAll(DataDir, os.ModePerm); err != nil {
+		return nil, errors.New("Unable to create Data Directory: " + err.Error())
+	}
+	m.dbFileName = DataDir + "/" + DbName
 	if err = m.openDB(); err != nil {
 		return nil, errors.New("Unable to open DB: " + err.Error())
 	}
