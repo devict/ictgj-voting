@@ -1,0 +1,43 @@
+<div class="space">
+  <a id="btnArchiveJam" class="pure-button pure-button-success" onclick="javascript:showConfirmArchiveModal();"><i class="fa fa-save"></i> Archive Current Jam</a>
+</div>
+{{ if not .TemplateData.Jams }}
+<div>No Jams have been archived.</div>
+{{ else }}
+<div>
+  <table id="archive-table" class="sortable pure-table pure-table-bordered center">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range $i, $v := .TemplateData.Jams }} 
+        <tr>
+            <td>{{ $v.Name }}</td>
+            <td class="only-large"><a href="/admin/archive/{{ $v.UUID }}">{{ $v.UUID }}</a></td>
+        </tr>
+        {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}
+
+<script>
+function showConfirmArchiveModal() {
+  showModal({
+    body: "Are you sure that you want to archive the current game jam?\nThis cannot be undone.",
+    buttons:[{
+        title: "Yes",
+        href: "/admin/archive/archive-current",
+        class: "pure-button-error",
+        position: "right",
+      }, {
+        title: "No",
+        click: hideModal,
+        position: "left",
+    }],
+  });
+}
+</script>

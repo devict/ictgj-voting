@@ -11,15 +11,27 @@ func handleAdminArchive(w http.ResponseWriter, req *http.Request, page *pageData
 	vars := mux.Vars(req)
 	page.SubTitle = "GameJam Archive"
 	id := vars["id"]
-	if id == "" {
-		// Archive List
-		type archivePageData struct {
-			Gamejams []Gamejam
-		}
-		//apd := new(archivePageData)
-	} else if id == "archive-current" {
+	if id == "archive-current" {
+		// Archive the current gamejam
 		if err := m.ArchiveCurrentJam(); err != nil {
+			page.session.setFlashMessage("Error archiving jam", "error")
 			fmt.Println(err.Error())
 		}
+		redirect("/admin/clients", w, req)
+	} else if id != "" {
+		// Display a specific archive
+		for _, v := range m.archive.Jams {
+			if id == v.UUID {
+				page.TemplateData = v
+				break
+			}
+		}
+		page.SubTitle = "Archived Game Jam"
+		page.show("admin-viewarchived.html", w)
+	} else {
+		// Archive List
+		page.TemplateData = m.archive
+		page.SubTitle = "Archive"
+		page.show("admin-archive.html", w)
 	}
 }

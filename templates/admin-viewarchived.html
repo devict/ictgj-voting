@@ -1,0 +1,27 @@
+{{ if not .TemplateData.UUID }}
+<div>Couldn't find the requested archive.</div>
+{{ else }}
+<div class="space">
+  <h2>{{ .TemplateData.Name }} ({{.TemplateData.UUID}})</h2>
+</div>
+<div class="space">
+  <h3>Votes: {{ len .TemplateData.Votes }}</h3>
+</div>
+<h3>Teams</h3>
+<table id="archive-teams" class="sortable pure-table pure-table-bordered center">
+  <thead>
+      <tr>
+          <th>Name</th>
+          <th></th>
+      </tr>
+  </thead>
+  <tbody>
+      {{ range $i, $v := .TemplateData.Jams }} 
+      <tr>
+          <td>{{ $v.Name }}</td>
+          <td class="only-large"><a href="/admin/archive/{{ $v.UUID }}">{{ $v.UUID }}</a></td>
+      </tr>
+      {{ end }}
+  </tbody>
+</table>
+{{ end }}

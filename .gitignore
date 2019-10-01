@@ -8,4 +8,5 @@ ictgj-voting.win386.exe
 ictgj-voting.win64.exe
 
 # Ignore the DBs
+data/
 *.db

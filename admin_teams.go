@@ -93,9 +93,6 @@ func handleAdminTeams(w http.ResponseWriter, req *http.Request, page *pageData) 
 		}
 	} else {
 		// Team List
-		type teamsPageData struct {
-			Teams []Team
-		}
 		page.TemplateData = m.jam
 		page.SubTitle = "Teams"
 		page.show("admin-teams.html", w)

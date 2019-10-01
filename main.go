@@ -325,7 +325,7 @@ func (p *pageData) show(tmplName string, w http.ResponseWriter) error {
 		"htmlfooter.html",
 	} {
 		if err := outputTemplate(tmpl, p, w); err != nil {
-			fmt.Printf("%s\n", err)
+			fmt.Printf("Error outputting Template %s\n%s\n", tmpl, err)
 			return err
 		}
 	}
