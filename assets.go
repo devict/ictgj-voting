@@ -11946,6 +11946,24 @@ NeurW5vrS2g3c+5HAAAA//8MM1iJSgMAAA==
 `,
 	},
 
+	"/templates/admin-archive.html": {
+		local:   "templates/admin-archive.html",
+		size:    1158,
+		modtime: 1569959976,
+		compressed: `
+H4sIAAAAAAAC/3yTT2+jPBDG73yKkdXDWymEO3V4VbWXjbQ5tYfV7h4GewhuwY5sQxUhvvvKYPKn6W4u
+8diPn/H8ZuBS9SAadG7D3AEFsSIB4AhKbljp9aMVteppiy1bZIfOUlp23hsNF+vUdUKQcwyMFo0S7xv2
+hj06YdXB5642H09GV8q20fK7kdj8d//ACq4W6wqhwtRhT6zgmSogauGps5a0hy22PMMi4ZlUfZEMA6gK
+tPGwfqH20KCnZ/S43mLrYByTUF2xMzDFNfYEJZEGnF3l+mxDjaPTjUDAY9nQRCGq02nnRMEZO0smBJ+X
+aWmsJEsSBGlPdqIaXGtCOa/n2J6DKCh22BLPfH17cr3Ls+V22D/5cl8aeTzLhgEs6j3BnVrBXQ/55mtY
+8K9XyWIY4K5fh7fBOPLMyxvJQsbo5pg2aPehiQi1pWrDMpSt0llkmc1ur6/fnmEcWXEVhgZfJzhXGgsi
+LUOz4tlSL88m9pfTEYUJn8ewSKpOC6+Mhr8OJAwJTKdzPExZQooc2KMlOJoOXGcJfI1+ij5Qe/BmGSvw
+NYGIA7sPwN6w/f+XfqmVA4E6jGtJ0GlpNK3Zak4wfUMu/zmc6vTKN5QD+0EuisIv4MzhM89lRmPaC/3U
+lBwuv9qUrDX2QnMwTgUoOTCr9vX5+riC2/fszJW9Eu851ErO/L40bahaPMff4X+8f0jGhGdLV/4EAAD/
+/6IDi16GBAAA
+`,
+	},
+
 	"/templates/admin-clients.html": {
 		local:   "templates/admin-clients.html",
 		size:    1173,
@@ -12115,6 +12133,20 @@ lnId1m2ISJHwl9G4I41zNH+S4xoux0499do6Kbi7vtjmpFiAc+6tneQ24HktuFwgav9CcGf/h7sTfDxA
 mTnq1N0k3u5jNeJt5+QRpmkxZrFDivwWVCGTiXZgVSSvzfcmksZzdRy9YRt8tYdLAXDSEXL5Y8AzHACD
 GXvy3PwYKZ6fyZHhEKvyv82bVJmo3N8XAPZYvcMb01mHkXzjyL9wpz4sHABCwHMXXoE7Wthy9p3rhfjJ
 0Rw+nj9jtdtw7fZN3tEXm7iJ1IcTVbvlX9hlAVMx7e8LKdZZfwYAAP//JH6PEe0DAAA=
+`,
+	},
+
+	"/templates/admin-viewarchived.html": {
+		local:   "templates/admin-viewarchived.html",
+		size:    694,
+		modtime: 1569957279,
+		compressed: `
+H4sIAAAAAAAC/3RSQW/yMAy991dYFdL3TVqJBDeU5jIu22En2N00hlRKU5aaSijqf59C2o11Iifn2X72
+sx0C1EdwLcNyR83ZItMWGZf7/esWhiGTuu7VS3ux2v1jONZOAxsCT58X6pg0oK9M3dNSihiZhQBkO5pS
+obLYdWXenbGiXGUA0qxUCLNq79jEFPgfwt82huFJCrNS2VjiEe9afbRM3QZCAEtuVuLmg2GQwqx/qMxa
+7QibbkQZD5ag1mU+yio4evPvcq1PIeeLp2JuFofWa/KkoSLH5FNfbAh1tOKT7CczfY2K2qVgM8fvMSlS
+XsRGNsmHVl+ngBDAozsRLOpnWPSwKWfy37CJ6uFRHzouZdFPm5CC9SxgmkHr7LWw6E+UK4lgPB3LXKBu
+aifGqYnENd5Qrn59pUB1Tz9pG2WQ0/F4bnhSKMVtuum2kvcrAAD//zoVZjW2AgAA
 `,
 	},
 

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"strconv"
 	"time"
-  "fmt"
-  "strconv"
 
 	"github.com/br0xen/boltease"
 	"github.com/pborman/uuid"
@@ -12,7 +12,7 @@ import (
 // Archived GameJams are in their own DB files in the data directory
 // named `gamejam_<uuid>.db`
 type Archive struct {
-	jams []ArchivedGamejam
+	Jams []ArchivedGamejam
 
 	m     *model   // The model that holds the main archive data
 	mPath []string // The path in the (main) db to the archives
@@ -34,13 +34,13 @@ func (m *model) LoadArchive() (*Archive, error) {
 	arc := NewArchive(m)
 	vals, err := m.bolt.GetValueList(arc.mPath)
 	if err != nil {
-		// There apparently aren't any archived jams
+		// There apparently aren't any archived Jams
 		return arc, nil
 	}
 	for _, v := range vals {
 		arcgj, err := NewArchivedGamejam(v)
 		if err == nil {
-			arc.jams = append(arc.jams, *arcgj)
+			arc.Jams = append(arc.Jams, *arcgj)
 		}
 	}
 
@@ -48,17 +48,17 @@ func (m *model) LoadArchive() (*Archive, error) {
 }
 
 func (m *model) SaveArchive() error {
-  var err error
-  if err = m.openDB(); err != nil {
-    return err
-  }
-  defer m.closeDB()
-  fmt.Println("Saving Archive")
-  for k, v := range m.archive.jams {
-    fmt.Printf("> %d. %s\n", k, v.UUID)
-    m.bolt.SetValue([]string{"archive"}, strconv.Itoa(k), v.UUID)
-  }
-  return nil
+	var err error
+	if err = m.openDB(); err != nil {
+		return err
+	}
+	defer m.closeDB()
+	fmt.Println("Saving Archive")
+	for k, v := range m.archive.Jams {
+		fmt.Printf("> %d. %s\n", k, v.UUID)
+		m.bolt.SetValue([]string{"archive"}, strconv.Itoa(k), v.UUID)
+	}
+	return nil
 }
 
 func (m *model) ArchiveCurrentJam() error {
@@ -68,40 +68,49 @@ func (m *model) ArchiveCurrentJam() error {
 	}
 	gj.UUID = m.jam.UUID
 	gj.Name = m.jam.Name
+	// We save the teams to the archive in their ranked order
 	for k := range m.jam.Teams {
 		gj.Teams = append(gj.Teams, m.jam.Teams[k])
 	}
 	for k := range m.jam.Votes {
 		gj.Votes = append(gj.Votes, m.jam.Votes[k])
 	}
-  err := gj.Save()
-  if err != nil {
-    return err
-  }
-  m.archive.jams = append(m.archive.jams, *gj)
-  // Now we need to clear the current jam
-  m.jam = NewGamejam(m)
+	rankings := getCondorcetResult()
+	for _, v := range rankings {
+		for _, tv := range v.Teams {
+			gj.Rankings = append(gj.Rankings, tv.UUID)
+		}
+	}
 
-  // Delete the Teams/Votes buckets from the jam
-  if err := m.openDB(); err != nil {
-    return err
-  }
-  defer m.closeDB()
-  if err := m.bolt.DeleteBucket([]string{"jam"}, "teams"); err != nil {
-    return err
-  }
-  if err := m.bolt.DeleteBucket([]string{"jam"}, "votes"); err != nil {
-    return err
-  }
-  return m.saveChanges()
+	err := gj.Save()
+	if err != nil {
+		return err
+	}
+	m.archive.Jams = append(m.archive.Jams, *gj)
+	// Now we need to clear the current jam
+	m.jam = NewGamejam(m)
+
+	// Delete the Teams/Votes buckets from the jam
+	if err := m.openDB(); err != nil {
+		return err
+	}
+	defer m.closeDB()
+	if err := m.bolt.DeleteBucket([]string{"jam"}, "teams"); err != nil {
+		return err
+	}
+	if err := m.bolt.DeleteBucket([]string{"jam"}, "votes"); err != nil {
+		return err
+	}
+	return m.saveChanges()
 }
 
 type ArchivedGamejam struct {
-	UUID  string
-	Name  string
-	Date  time.Time
-	Teams []Team
-	Votes []Vote
+	UUID     string
+	Name     string
+	Date     time.Time
+	Rankings []string
+	Teams    []Team
+	Votes    []Vote
 }
 
 func NewArchivedGamejam(uuid string) (*ArchivedGamejam, error) {
@@ -153,53 +162,62 @@ func (a *ArchivedGamejam) Save() error {
 				return err
 			}
 		}
-    // The team's game
-    gm := tm.Game
-    if err := bolt.MkBucketPath(gm.mPath); err != nil {
-      return err
-    }
+		// The team's game
+		gm := tm.Game
+		if err := bolt.MkBucketPath(gm.mPath); err != nil {
+			return err
+		}
 
-    if err := bolt.SetValue(gm.mPath, "name", gm.Name); err != nil {
-      return err
-    }
-    if err := bolt.SetValue(gm.mPath, "link", gm.Link); err != nil {
-      return err
-    }
-    if err := bolt.SetValue(gm.mPath, "description", gm.Description); err != nil {
-      return err
-    }
-    if err := bolt.SetValue(gm.mPath, "framework", gm.Framework); err != nil {
-      return err
-    }
-    // Save screenshots
-    if err := bolt.MkBucketPath(append(gm.mPath, "screenshots")); err != nil {
-      return err
-    }
+		if err := bolt.SetValue(gm.mPath, "name", gm.Name); err != nil {
+			return err
+		}
+		if err := bolt.SetValue(gm.mPath, "link", gm.Link); err != nil {
+			return err
+		}
+		if err := bolt.SetValue(gm.mPath, "description", gm.Description); err != nil {
+			return err
+		}
+		if err := bolt.SetValue(gm.mPath, "framework", gm.Framework); err != nil {
+			return err
+		}
+		// Save screenshots
+		if err := bolt.MkBucketPath(append(gm.mPath, "screenshots")); err != nil {
+			return err
+		}
 
-    for _, ss := range gm.Screenshots {
-      if err = bolt.MkBucketPath(ss.mPath); err != nil {
-        return err
-      }
-      if err = bolt.SetValue(ss.mPath, "description", ss.Description); err != nil {
-        return err
-      }
-      if err = bolt.SetValue(ss.mPath, "image", ss.Image); err != nil {
-        return err
-      }
-      if err = bolt.SetValue(ss.mPath, "filetype", ss.Filetype); err != nil {
-        return err
-      }
-    }
-  }
-  // All teams are archived
-  // Move on to votes
-  for _, vt := range a.Votes {
-    for _, v := range vt.Choices {
-      bolt.SetValue(vt.mPath, strconv.Itoa(v.Rank), v.Team)
-    }
-    bolt.SetValue(vt.mPath, "voterstatus", vt.VoterStatus)
-    bolt.SetValue(vt.mPath, "discovery", vt.Discovery)
-  }
+		for _, ss := range gm.Screenshots {
+			if err = bolt.MkBucketPath(ss.mPath); err != nil {
+				return err
+			}
+			if err = bolt.SetValue(ss.mPath, "description", ss.Description); err != nil {
+				return err
+			}
+			if err = bolt.SetValue(ss.mPath, "image", ss.Image); err != nil {
+				return err
+			}
+			if err = bolt.SetValue(ss.mPath, "filetype", ss.Filetype); err != nil {
+				return err
+			}
+		}
+	}
+	// All teams are archived
+	// Move on to votes
+	for _, vt := range a.Votes {
+		for _, v := range vt.Choices {
+			bolt.SetValue(vt.mPath, strconv.Itoa(v.Rank), v.Team)
+		}
+		bolt.SetValue(vt.mPath, "voterstatus", vt.VoterStatus)
+		bolt.SetValue(vt.mPath, "discovery", vt.Discovery)
+	}
+	// And the rankings
+	if err = bolt.MkBucketPath([]string{"jam", "rankings"}); err != nil {
+		return err
+	}
+	for kr, vr := range a.Rankings {
+		if err = bolt.SetValue([]string{"jam", "rankings"}, strconv.Itoa(kr), vr); err != nil {
+			return err
+		}
+	}
 
-  return nil
+	return nil
 }
