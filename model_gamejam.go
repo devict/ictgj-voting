@@ -26,6 +26,7 @@ type Gamejam struct {
 
 func NewGamejam(m *model) *Gamejam {
 	gj := new(Gamejam)
+	gj.Name = time.Now().Format("2006-01-02T15:04:05 Game Jam")
 	gj.m = m
 	gj.mPath = []string{"jam"}
 	return gj

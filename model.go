@@ -64,7 +64,9 @@ func NewModel() (*model, error) {
 	m.clients = m.LoadAllClients()
 
 	// Load the archives
-	m.archive = m.LoadArchive()
+	if m.archive, err = m.LoadArchive(); err != nil {
+		return nil, errors.New("Unable to load game jam archive: " + err.Error())
+	}
 
 	return m, nil
 }
@@ -124,25 +126,22 @@ func (m *model) saveChanges() error {
 	}
 	defer m.closeDB()
 
-	//if m.site.NeedsSave() {
 	fmt.Println("Saving Site data to DB")
 	if err = m.site.SaveToDB(); err != nil {
 		return err
 	}
-	//}
-	//if m.jam.IsChanged {
 	fmt.Println("Saving Jam data to DB")
 	if err = m.jam.SaveToDB(); err != nil {
 		return err
 	}
 	m.jam.IsChanged = false
-	//}
-	//if m.clientsUpdated {
 	fmt.Println("Saving Client data to DB")
 	if err = m.SaveAllClients(); err != nil {
 		return err
 	}
 	m.clientsUpdated = false
-	//}
+	if err = m.SaveArchive(); err != nil {
+		return err
+	}
 	return nil
 }

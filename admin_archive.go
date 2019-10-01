@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -16,5 +17,9 @@ func handleAdminArchive(w http.ResponseWriter, req *http.Request, page *pageData
 			Gamejams []Gamejam
 		}
 		//apd := new(archivePageData)
+	} else if id == "archive-current" {
+		if err := m.ArchiveCurrentJam(); err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 }
