@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/br0xen/boltease"
 )
@@ -16,6 +17,7 @@ type model struct {
 	site    *siteData // Configuration data for the site
 	jam     *Gamejam  // The currently active gamejam
 	clients []Client  // Web clients that have connected to the server
+	archive *Archive  // The archive of past game jams
 
 	clientsUpdated bool
 }
@@ -30,7 +32,11 @@ func NewModel() (*model, error) {
 	var err error
 	m := new(model)
 
-	m.dbFileName = DbName
+	// make sure the data directory exists
+	if err = os.MkdirAll(DataDir, os.ModePerm); err != nil {
+		return nil, errors.New("Unable to create Data Directory: " + err.Error())
+	}
+	m.dbFileName = DataDir + "/" + DbName
 	if err = m.openDB(); err != nil {
 		return nil, errors.New("Unable to open DB: " + err.Error())
 	}
@@ -56,6 +62,11 @@ func NewModel() (*model, error) {
 
 	// Load web clients
 	m.clients = m.LoadAllClients()
+
+	// Load the archives
+	if m.archive, err = m.LoadArchive(); err != nil {
+		return nil, errors.New("Unable to load game jam archive: " + err.Error())
+	}
 
 	return m, nil
 }
@@ -115,25 +126,22 @@ func (m *model) saveChanges() error {
 	}
 	defer m.closeDB()
 
-	//if m.site.NeedsSave() {
 	fmt.Println("Saving Site data to DB")
 	if err = m.site.SaveToDB(); err != nil {
 		return err
 	}
-	//}
-	//if m.jam.IsChanged {
 	fmt.Println("Saving Jam data to DB")
 	if err = m.jam.SaveToDB(); err != nil {
 		return err
 	}
 	m.jam.IsChanged = false
-	//}
-	//if m.clientsUpdated {
 	fmt.Println("Saving Client data to DB")
 	if err = m.SaveAllClients(); err != nil {
 		return err
 	}
 	m.clientsUpdated = false
-	//}
+	if err = m.SaveArchive(); err != nil {
+		return err
+	}
 	return nil
 }

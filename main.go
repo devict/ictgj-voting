@@ -26,7 +26,10 @@ import (
 // AppName Application name
 const AppName = "gjvote"
 
-// DbName Database name, which is <AppName>.db
+// The directory that we're storing all of the data in
+const DataDir = "data"
+
+// DbName Main Database name, which is <AppName>.db
 const DbName = AppName + ".db"
 
 // pageData is stuff that changes per request
