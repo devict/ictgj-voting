@@ -286,6 +286,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	// Build the menu
 	if p.LoggedIn {
 		p.Menu = append(p.Menu, menuItem{"Admin", "/admin", "fa-key"})
+		p.Menu = append(p.Menu, menuItem{"Jam", "/admin/jam", "fa-play-circle-o"})
 		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "fa-users"})
 		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "fa-gamepad"})
 		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
