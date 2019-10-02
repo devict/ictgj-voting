@@ -17,7 +17,7 @@ func handleAdminArchive(w http.ResponseWriter, req *http.Request, page *pageData
 			page.session.setFlashMessage("Error archiving jam", "error")
 			fmt.Println(err.Error())
 		}
-		redirect("/admin/clients", w, req)
+		redirect("/admin/jam", w, req)
 	} else if id != "" {
 		// Display a specific archive
 		for _, v := range m.archive.Jams {
