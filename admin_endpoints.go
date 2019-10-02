@@ -49,6 +49,8 @@ func handleAdmin(w http.ResponseWriter, req *http.Request) {
 			handleAdminSetAuthMode(w, req, page)
 		case "archive":
 			handleAdminArchive(w, req, page)
+		case "jam":
+			handleAdminJam(w, req, page)
 		default:
 			page.TemplateData = getCondorcetResult()
 			page.show("admin-main.html", w)

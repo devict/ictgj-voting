@@ -1,0 +1,13 @@
+<div class="center">
+  <form class="pure-form pure-form-aligned" action="/admin/jam/save" method="POST">
+    <fieldset>
+      <div class="pure-control-group">
+        <label class="control-label" for="jam_name">Jam Name</label>
+        <input id="jam_name" name="jam_name" type="text" placeholder="Game Jam" value="{{ .TemplateData.Name }}">
+      </div>
+
+      <div class="pure-control-group reset-pull">
+        <button type="submit" class="pull-right space pure-button pure-button-primary">Save</button>
+      </div>
+  </form>
+</div>

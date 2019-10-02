@@ -11949,7 +11949,7 @@ NeurW5vrS2g3c+5HAAAA//8MM1iJSgMAAA==
 	"/templates/admin-archive.html": {
 		local:   "templates/admin-archive.html",
 		size:    1158,
-		modtime: 1569959976,
+		modtime: 1569960123,
 		compressed: `
 H4sIAAAAAAAC/3yTT2+jPBDG73yKkdXDWymEO3V4VbWXjbQ5tYfV7h4GewhuwY5sQxUhvvvKYPKn6W4u
 8diPn/H8ZuBS9SAadG7D3AEFsSIB4AhKbljp9aMVteppiy1bZIfOUlp23hsNF+vUdUKQcwyMFo0S7xv2
@@ -12065,6 +12065,19 @@ k7jqb1KxKCmivvvw1bpPPQ/6TBrYLxN3CTyIbyGUfWF1vm+p1iCkKEer56/sZwAAAP//WJzUo1ACAAA=
 `,
 	},
 
+	"/templates/admin-jam.html": {
+		local:   "templates/admin-jam.html",
+		size:    537,
+		modtime: 1570048956,
+		compressed: `
+H4sIAAAAAAAC/4xRTYvjMAy991cI3dP8gTinhYUedhfa+6LGausif2DLYUrpfx+Spp0wp7mYp+enpyfU
+WTfCIFSKwYGDcsZ+A9CdYvYvPtXMzUy8UUPizoEtAg3qYjDYkvUutFfybaGRETzrJVqD//7uD7Pn5OpY
+bGF9lgDr6bP3EIPmKM05x5rwJQPohI4s76CLaiYRTjEbvJL/H8gz9jvy8Ic8d+38vzJxIVUFZ1dqmN51
+rbfEBpU/FCEJDXyJYjkb/E2eYUceYSSpbPB+h+2BfRJS/kVK22koPB7v2F1r3dhvfrQrZC6sTaoi67WP
+VTWGJVSpR+8Uv0xEmuzOF4WSaODndZaOFW5Sdp7yDfs9jdy1T/ZbyAlMh+03C/EZAAD//z9tbloZAgAA
+`,
+	},
+
 	"/templates/admin-login.html": {
 		local:   "templates/admin-login.html",
 		size:    806,
@@ -12139,7 +12152,7 @@ GXvy3PwYKZ6fyZHhEKvyv82bVJmo3N8XAPZYvcMb01mHkXzjyL9wpz4sHABCwHMXXoE7Wthy9p3rhfjJ
 	"/templates/admin-viewarchived.html": {
 		local:   "templates/admin-viewarchived.html",
 		size:    694,
-		modtime: 1569957279,
+		modtime: 1569960123,
 		compressed: `
 H4sIAAAAAAAC/3RSQW/yMAy991dYFdL3TVqJBDeU5jIu22En2N00hlRKU5aaSijqf59C2o11Iifn2X72
 sx0C1EdwLcNyR83ZItMWGZf7/esWhiGTuu7VS3ux2v1jONZOAxsCT58X6pg0oK9M3dNSihiZhQBkO5pS
