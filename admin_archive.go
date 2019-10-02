@@ -20,12 +20,28 @@ func handleAdminArchive(w http.ResponseWriter, req *http.Request, page *pageData
 		redirect("/admin/jam", w, req)
 	} else if id != "" {
 		// Display a specific archive
+		agj := new(ArchivedGamejam)
 		for _, v := range m.archive.Jams {
 			if id == v.UUID {
-				page.TemplateData = v
+				agj.UUID = v.UUID
+				agj.Name = v.Name
+				agj.Date = v.Date
+				agj.Rankings = v.Rankings
+				agj.Teams = v.Teams
+				agj.Votes = v.Votes
 				break
 			}
 		}
+		// We want to replace the team UUIDs in the rankings with their name
+		for k, v := range agj.Rankings {
+			for _, tv := range agj.Teams {
+				if tv.UUID == v {
+					agj.Rankings[k] = tv.Name
+					break
+				}
+			}
+		}
+		page.TemplateData = agj
 		page.SubTitle = "Archived Game Jam"
 		page.show("admin-viewarchived.html", w)
 	} else {

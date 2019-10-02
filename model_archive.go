@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -125,9 +126,73 @@ func NewArchivedGamejam(uuid string) (*ArchivedGamejam, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Probably we want to load in the teams & votes too...
+	// Now load in all of the teams
+	var tmUUIDs []string
+	if tmUUIDs, err = bolt.GetBucketList([]string{"jam", "teams"}); err != nil {
+		return nil, err
+	}
+	for _, v := range tmUUIDs {
+		tm, err := gj.LoadTeam(bolt, v)
+		if err != nil {
+			return nil, err
+		}
+		gj.Teams = append(gj.Teams, *tm)
+	}
 
+  // And finally, the Rankings
+  var ranks []string
+  if ranks, err = bolt.GetKeyList([]string{"jam", "rankings"}); err != nil {
+    return nil, err
+  }
+  fmt.Println("Ranks:", ranks)
+  for _, v := range ranks {
+    var tmUUID string
+    tmUUID, err = bolt.GetValue([]string{"jam", "rankings"}, v)
+    if err != nil {
+      return nil, err
+    }
+    gj.Rankings = append(gj.Rankings, tmUUID)
+  }
+
+  // We could pull votes too... But I'm not right now.
 	return gj, nil
+}
+
+func (a *ArchivedGamejam) LoadTeam(openbolt *boltease.DB, uuid string) (*Team, error) {
+	tm := NewTeam(uuid)
+	var err error
+	if tm.Name, err = openbolt.GetValue(tm.mPath, "name"); err != nil {
+		return nil, errors.New("Error loading team: " + err.Error())
+	}
+
+	// Load the Team Members
+	var memberUuids []string
+	mbrsPath := append(tm.mPath, "members")
+	if memberUuids, err = openbolt.GetBucketList(mbrsPath); err == nil {
+		for _, v := range memberUuids {
+			mbr, err := NewTeamMember(uuid, v)
+			if err != nil {
+				return nil, err
+			}
+			if mbr.Name, err = openbolt.GetValue(mbr.mPath, "name"); err != nil {
+				return nil, errors.New("Error loading team member: " + err.Error())
+			}
+			tm.Members = append(tm.Members, *mbr)
+		}
+	}
+
+	// Load the Team's Game
+	tm.Game, err = NewGame(uuid)
+	if err != nil {
+		return nil, err
+	}
+	if tm.Game.Name, err = openbolt.GetValue(tm.Game.mPath, "name"); err != nil {
+		tm.Game.Name = ""
+	}
+	if tm.Game.Link, err = openbolt.GetValue(tm.Game.mPath, "link"); err != nil {
+		tm.Game.Link = ""
+	}
+	return tm, nil
 }
 
 func (a *ArchivedGamejam) Save() error {

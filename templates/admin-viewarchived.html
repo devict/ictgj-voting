@@ -2,26 +2,41 @@
 <div>Couldn't find the requested archive.</div>
 {{ else }}
 <div class="space">
-  <h2>{{ .TemplateData.Name }} ({{.TemplateData.UUID}})</h2>
+  <h2 style="margin-bottom:0px;">{{ .TemplateData.Name }}</h2>
+  <span style="margin-top:0px;">({{.TemplateData.UUID}})</span>
 </div>
-<div class="space">
-  <h3>Votes: {{ len .TemplateData.Votes }}</h3>
+
+<div class="results-container">
+<h2>Final Results</h2>
+{{ range $i, $v := .TemplateData.Rankings }}
+  {{ $i }}: {{ $v }}<br />
+{{ end }}
 </div>
-<h3>Teams</h3>
-<table id="archive-teams" class="sortable pure-table pure-table-bordered center">
+
+<h2>All Teams</h2>
+<table id="teams-table" class="sortable pure-table pure-table-bordered center">
   <thead>
       <tr>
           <th>Name</th>
-          <th></th>
+          <th class="only-large">Members</th>
+          <th class="only-large">Game</th>
       </tr>
   </thead>
   <tbody>
-      {{ range $i, $v := .TemplateData.Jams }} 
+  {{ range $i, $v := .TemplateData.Teams }}
       <tr>
-          <td>{{ $v.Name }}</td>
-          <td class="only-large"><a href="/admin/archive/{{ $v.UUID }}">{{ $v.UUID }}</a></td>
+          <td>{{ $v.Name }}<p class="only-small">{{ $v.Game.Name }}</p></td>
+          <td class="only-large">{{ len $v.Members }}</td>
+          <td class="only-large">
+          {{ if $v.Game.Link }}
+            <a href="{{$v.Game.Link}}">
+          {{ end }}
+            {{ $v.Game.Name }}
+          {{ if $v.Game.Link }}
+            </a>
+          {{ end }}
+          </td>
       </tr>
-      {{ end }}
-  </tbody>
+  {{ end }}
 </table>
 {{ end }}
