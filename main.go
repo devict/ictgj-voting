@@ -293,8 +293,8 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 		p.Menu = append(p.Menu, menuItem{"Archive", "/admin/archive", "zmdi-archive"})
 		p.Menu = append(p.Menu, menuItem{"Clients", "/admin/clients", "zmdi-devices"})
 
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "zmdi-user"})
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "zmdi-sign-out"})
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "zmdi-accounts"})
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "zmdi-eject"})
 	} else {
 		p.BottomMenu = append(p.BottomMenu, menuItem{"Admin", "/admin", "zmdi-sign-in"})
 	}
