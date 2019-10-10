@@ -17,16 +17,26 @@
       <tr>
           <td>
             {{ if $v.Auth }}
-            <a href="/admin/clients/{{ $v.UUID }}/deauth" class="primary"><i class="fa fa-2 fa-toggle-on"></i></a>
+            <a href="/admin/clients/{{ $v.UUID }}/deauth" class="primary">
+              <span class="zmdi-hc-stack zmdi-hc-lg">
+                <i class="zmdi zmdi-circle zmdi-hc-stack-2x"></i>
+                <i class="zmdi zmdi-hc-2x zmdi-check zmdi-hc-stack-1x zmdi-hc-inverse"></i>
+              </span>
+            </a>
             {{ else }}
-            <a href="/admin/clients/{{ $v.UUID }}/auth" class="error"><i class="fa fa-2 fa-toggle-off"></i></a>
+            <a href="/admin/clients/{{ $v.UUID }}/auth">
+              <span class="zmdi-hc-stack zmdi-hc-lg">
+                <i class="zmdi zmdi-hc-stack-1x zmdi-check plain"></i>
+                <i class="zmdi zmdi-block zmdi-hc-stack-2x error"></i>
+              </span>
+            </a>
             {{ end }}
           </td>
           <td>{{ $v.Name }}<p class="only-small">({{ $v.UUID }})</p></td>
           <td class="only-large">{{ $v.UUID }}</td>
           <td class="only-large">{{ $v.IP }}</td>
           <td class="only-large">{{ if $v.Auth }} Yes {{ else }} No {{ end }}</td>
-          <td class=""><a href="/admin/clients/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a></td>
+          <td class=""><a href="/admin/clients/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="zmdi zmdi-delete"></i></a></td>
       </tr>
       {{ end }}
   </tbody>

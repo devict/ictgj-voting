@@ -1,5 +1,5 @@
 <div class="bottom-space center">
-  <a id="btnAddUser" class="pure-button pure-button-success" href="/admin/users/new"><i class="fa fa-plus"></i> Add User</a>
+  <a id="btnAddUser" class="pure-button pure-button-success" href="/admin/users/new"><i class="zmdi zmdi-plus-circle"></i> Add User</a>
 </div>
 <table id="users-table" class="hidden sortable pure-table pure-table-bordered center">
   <thead>
@@ -13,8 +13,8 @@
       <tr>
           <td>{{ $v }}</td>
           <td>
-            <a href="/admin/users/{{ $v }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
-            <a href="/admin/users/{{ $v }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
+            <a href="/admin/users/{{ $v }}/edit" class="pure-button pure-button-plain"><i class="zmdi zmdi-edit"></i></a>
+            <a href="/admin/users/{{ $v }}/delete" class="pure-button pure-button-plain"><i class="zmdi zmdi-delete"></i></a>
           </td>
       </tr>
       {{ end }}

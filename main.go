@@ -269,7 +269,7 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 	p.Stylesheets = make([]string, 0, 0)
 	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/css/pure-min.css")
 	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/css/grids-responsive-min.css")
-	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/font-awesome/css/font-awesome.min.css")
+	p.Stylesheets = append(p.Stylesheets, "/assets/vendor/material-font/css/material-design-iconic-font.min.css")
 	p.Stylesheets = append(p.Stylesheets, "/assets/css/gjvote.css")
 
 	p.HeaderScripts = make([]string, 0, 0)
@@ -285,18 +285,18 @@ func InitPageData(w http.ResponseWriter, req *http.Request) *pageData {
 
 	// Build the menu
 	if p.LoggedIn {
-		p.Menu = append(p.Menu, menuItem{"Admin", "/admin", "fa-key"})
-		p.Menu = append(p.Menu, menuItem{"Jam", "/admin/jam", "fa-play-circle-o"})
-		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "fa-users"})
-		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "fa-gamepad"})
-		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "fa-sticky-note"})
-		p.Menu = append(p.Menu, menuItem{"Archive", "/admin/archive", "fa-archive"})
-		p.Menu = append(p.Menu, menuItem{"Clients", "/admin/clients", "fa-desktop"})
+		p.Menu = append(p.Menu, menuItem{"Admin", "/admin", "zmdi-key"})
+		p.Menu = append(p.Menu, menuItem{"Jam", "/admin/jam", "zmdi-group"})
+		p.Menu = append(p.Menu, menuItem{"Teams", "/admin/teams", "zmdi-accounts-alt"})
+		p.Menu = append(p.Menu, menuItem{"Games", "/admin/games", "zmdi-gamepad"})
+		p.Menu = append(p.Menu, menuItem{"Votes", "/admin/votes", "zmdi-assignment-check"})
+		p.Menu = append(p.Menu, menuItem{"Archive", "/admin/archive", "zmdi-archive"})
+		p.Menu = append(p.Menu, menuItem{"Clients", "/admin/clients", "zmdi-devices"})
 
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "fa-user"})
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "fa-sign-out"})
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Users", "/admin/users", "zmdi-user"})
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Logout", "/admin/dologout", "zmdi-sign-out"})
 	} else {
-		p.BottomMenu = append(p.BottomMenu, menuItem{"Admin", "/admin", "fa-sign-in"})
+		p.BottomMenu = append(p.BottomMenu, menuItem{"Admin", "/admin", "zmdi-sign-in"})
 	}
 	p.HideAdminMenu = true
 
