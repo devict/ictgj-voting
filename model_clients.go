@@ -162,3 +162,23 @@ func (m *model) UpdateClient(cl *Client) {
 	}
 	m.clientsUpdated = true
 }
+
+func (m *model) DeleteClient(id string) error {
+	idx := -1
+	for i := range m.clients {
+		if m.clients[i].UUID == id {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return errors.New("Invalid Client ID given")
+	}
+	m.clients = append(m.clients[:idx], m.clients[idx+1:]...)
+	// Now delete it from the DB
+	if err := m.openDB(); err != nil {
+		return nil
+	}
+	defer m.closeDB()
+	return m.bolt.DeleteBucket([]string{"clients"}, id)
+}

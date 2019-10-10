@@ -37,6 +37,14 @@ func handleAdminClients(w http.ResponseWriter, req *http.Request, page *pageData
 			}
 			page.TemplateData = actClientPageData{Id: client.UUID, Ip: client.IP, Name: client.Name}
 			page.show("admin-activateclient.html", w)
+		case "delete":
+			var err error
+			if err = m.DeleteClient(clientId); err != nil {
+				page.session.setFlashMessage("Error removing client: "+err.Error(), "error")
+			} else {
+				page.session.setFlashMessage("Client Removed", "success")
+			}
+			redirect("/admin/clients", w, req)
 		case "auth":
 			email := req.FormValue("email")
 			password := req.FormValue("password")
