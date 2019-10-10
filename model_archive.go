@@ -144,7 +144,6 @@ func NewArchivedGamejam(uuid string) (*ArchivedGamejam, error) {
   if ranks, err = bolt.GetKeyList([]string{"jam", "rankings"}); err != nil {
     return nil, err
   }
-  fmt.Println("Ranks:", ranks)
   for _, v := range ranks {
     var tmUUID string
     tmUUID, err = bolt.GetValue([]string{"jam", "rankings"}, v)
