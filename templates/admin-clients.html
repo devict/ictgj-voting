@@ -9,6 +9,7 @@
           <th class="only-large">Client ID</th>
           <th class="only-large">Last Known IP</th>
           <th class="only-large">Authenticated</th>
+          <th class=""></th>
       </tr>
   </thead>
   <tbody>
@@ -25,6 +26,7 @@
           <td class="only-large">{{ $v.UUID }}</td>
           <td class="only-large">{{ $v.IP }}</td>
           <td class="only-large">{{ if $v.Auth }} Yes {{ else }} No {{ end }}</td>
+          <td class=""><a href="/admin/clients/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a></td>
       </tr>
       {{ end }}
   </tbody>
