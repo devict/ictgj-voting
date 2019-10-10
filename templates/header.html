@@ -7,27 +7,27 @@ var clientId = "{{.ClientId}}";
 <div id="menu" class="{{if .HideAdminMenu}}hidden{{end}}">
   <div class="pure-menu">
     <a href="#menu" class="menu-button">
-      <i class="fa fa-bars"></i>
+      <i class="zmdi zmdi-menu"></i>
     </a>
     <div class="menu-container">
       <ul class="pure-menu-list">
         {{ range $k, $v := .Menu }}
         <li class="pure-menu-item">
-          <a href="{{ $v.Location }}" class="pure-menu-link"><i class="fa {{ $v.Icon }}"></i> {{ $v.Label }}</a>
+          <a href="{{ $v.Location }}" class="pure-menu-link"><i class="zmdi {{ $v.Icon }}"></i> {{ $v.Label }}</a>
         </li>
         {{ end }}
       </ul>
       {{ if .ClientIsAuth }}
         {{ if not .ClientIsServer }}
-        <a href="/admin/clients/{{.ClientId}}/remove" class="pure-menu-link"><i class="fa fa-key"></i> DeAuth Client</a>
+        <a href="/admin/clients/{{.ClientId}}/remove" class="pure-menu-link"><i class="zmdi zmdi-key"></i> DeAuth Client</a>
         {{ end }}
       {{ else }}
-      <a href="/admin/clients/{{.ClientId}}/add" class="pure-menu-link"><i class="fa fa-key"></i> Auth Client</a>
+      <a href="/admin/clients/{{.ClientId}}/add" class="pure-menu-link"><i class="zmdi zmdi-key"></i> Auth Client</a>
       {{ end }}
       <ul class="pure-menu-list menu-bottom">
         {{ range $k, $v := .BottomMenu }}
         <li class="pure-menu-item">
-          <a href="{{ $v.Location }}" class="pure-menu-link"><i class="fa {{ $v.Icon }}"></i> {{ $v.Label }}</a>
+          <a href="{{ $v.Location }}" class="pure-menu-link"><i class="zmdi {{ $v.Icon }}"></i> {{ $v.Label }}</a>
         </li>
         {{ end }}
       </ul>

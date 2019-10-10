@@ -1,5 +1,5 @@
 <div class="bottom-space center">
-  <a id="btnAddTeam" class="pure-button pure-button-success" href="/admin/teams/new"><i class="fa fa-plus"></i> Add Team</a>
+  <a id="btnAddTeam" class="pure-button pure-button-success" href="/admin/teams/new"><i class="zmdi zmdi-plus-circle"></i> Add Team</a>
 </div>
 {{ if not .TemplateData.Teams }}
 <div>No teams have been created</div>
@@ -22,8 +22,8 @@
           <td class="only-large">{{ len $v.Members }}</td>
           <td class="only-large">{{ $v.Game.Name }}</td>
           <td>
-            <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="fa fa-pencil"></i></a>
-            <a href="/admin/teams/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="fa fa-trash"></i></a>
+            <a href="/admin/teams/{{ $v.UUID }}/edit" class="pure-button pure-button-plain"><i class="zmdi zmdi-edit"></i></a>
+            <a href="/admin/teams/{{ $v.UUID }}/delete" class="pure-button pure-button-plain"><i class="zmdi zmdi-delete"></i></a>
           </td>
       </tr>
       {{ end }}

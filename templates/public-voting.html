@@ -19,17 +19,17 @@
       <tbody>
         {{ range $i, $v := .TemplateData.Teams }}
         <tr id="teamrow-{{$v.UUID}}" data-teamid="{{$v.UUID}}">
-          <td class="unranked-actions"><a class="pure-button pure-button-primary" href="javascript:moveToRanked('{{$v.UUID}}');"><i class="fa fa-plus"></i> Add to Vote</a></td>
+          <td class="unranked-actions"><a class="pure-button pure-button-primary" href="javascript:moveToRanked('{{$v.UUID}}');"><i class="zmdi zmdi-plus-circle"></i> Add to Vote</a></td>
           <td class="voting-col game-name">{{ $v.Game.Name }}</td>
           <td class="voting-col team-name">{{ $v.Name }}</td>
           <td class="voting-col game-screenshots" data-sscount="{{len $v.Game.Screenshots}}">
             {{ if not $v.Game.Screenshots }}
-            <i class="fa fa-image"></i> (No Screenshots)
+            <i class="zmdi zmdi-image"></i> (No Screenshots)
             {{ else }}
             {{ $ss := index $v.Game.Screenshots 0 }}
             <a class="primary" tabindex="-1" href="javascript:showScreenshots('{{$v.UUID}}');">
               <img height="50" src="data:image/{{ $ss.Filetype }};base64,{{ $ss.Thumbnail }}" /><br />
-              <i class="fa fa-image"></i> ({{ len $v.Game.Screenshots }}) Click to View
+              <i class="zmdi zmdi-image"></i> ({{ len $v.Game.Screenshots }}) Click to View
             </a>
             {{ end }}
           </td>
@@ -361,7 +361,7 @@ function createRankedActionsTd(tmUUID) {
   td.classList.add('ranked-actions');
   var upBtn = document.createElement('button');
   upBtn.classList.add('ranked-move-up', 'pure-button', 'pure-button-toggle-first', 'pure-button-primary');
-  upBtn.innerHTML = '<i class="fa fa-arrow-up"></i> Move Up';
+  upBtn.innerHTML = '<i class="zmdi zmdi-caret-up-circle"></i> Move Up';
   snack.listener({
     node: upBtn,
     event: 'click'
@@ -371,7 +371,7 @@ function createRankedActionsTd(tmUUID) {
   td.appendChild(upBtn);
   var dnBtn = document.createElement('button');
   dnBtn.classList.add('ranked-move-down', 'pure-button', 'pure-button-toggle-middle', 'pure-button-primary');
-  dnBtn.innerHTML = '<i class="fa fa-arrow-down"></i> Move Down';
+  dnBtn.innerHTML = '<i class="zmdi zmdi-caret-down-circle"></i> Move Down';
   snack.listener({
     node: dnBtn,
     event: 'click'
@@ -382,7 +382,7 @@ function createRankedActionsTd(tmUUID) {
   var delBtn = document.createElement('button');
   delBtn.dataset.teamid=tmUUID
   delBtn.classList.add('ranked-remove', 'pure-button', 'pure-button-toggle-last', 'pure-button-error');
-  delBtn.innerHTML = '<i class="fa fa-times"></i> Remove';
+  delBtn.innerHTML = '<i class="zmdi zmdi-close"></i> Remove';
   snack.listener({
     node: delBtn,
     event: 'click'
@@ -400,7 +400,7 @@ function createUnrankedActionsTd(tmUUID) {
   var addBtn = document.createElement('a');
   addBtn.dataset.teamid=tmUUID
   addBtn.classList.add('pure-button', 'pure-button-toggle-last', 'pure-button-primary');
-  addBtn.innerHTML = '<i class="fa fa-plus"></i> Add to Vote';
+  addBtn.innerHTML = '<i class="zmdi zmdi-plus-circle"></i> Add to Vote';
   addBtn.href = "javascript:moveToRanked('"+tmUUID+"');";
   td.appendChild(addBtn);
   return td;
