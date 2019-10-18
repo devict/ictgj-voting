@@ -30,7 +30,7 @@ function showConfirmArchiveModal() {
     body: "Are you sure that you want to archive the current game jam?\nThis cannot be undone.",
     buttons:[{
         title: "Yes",
-        href: "/admin/archive/archive-current",
+        click: triggerArchive,
         class: "pure-button-error",
         position: "right",
       }, {
@@ -39,5 +39,12 @@ function showConfirmArchiveModal() {
         position: "left",
     }],
   });
+}
+function triggerArchive() {
+  hideModal()
+  showModal({
+    body: "Archiving game jam. Please wait."
+  });
+  window.location.href = "/admin/archive/archive-current";
 }
 </script>
