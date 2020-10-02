@@ -14,8 +14,8 @@
     <script src="http://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7/html5shiv.js"></script>
 <![endif]-->
 
-    {{ range $i, $v := .Stylesheets }}
-    <link rel="stylesheet" href="{{ $v }}">
+    {{ range .Stylesheets }}
+    <link rel="stylesheet" href="{{ . }}">
     {{ end }}
     {{ range $i, $v := .HeaderScripts }}
     <script src="{{ $v }}"></script>
