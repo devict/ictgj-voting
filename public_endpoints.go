@@ -16,11 +16,23 @@ func initPublicPage(w http.ResponseWriter, req *http.Request) *pageData {
 	return p
 }
 
+func initPublicNoEventPage(w http.ResponseWriter, req *http.Request) *pageData {
+	p := InitPageData(w, req)
+	// Replace the gjvote.css sheet with gjvote-info.css
+	styles := make([]string, 0, 0)
+	for _, v := range p.Stylesheets {
+		if v == "/assets/css/gjvote.css" {
+			v = "/assets/css/gjvote-info.css"
+		}
+		styles = append(styles, v)
+	}
+	p.Stylesheets = styles
+	return p
+}
+
 func handleMain(w http.ResponseWriter, req *http.Request) {
 	if m.site.GetPublicMode() == SiteModeWaiting {
-		page := initPublicPage(w, req)
-		page.SubTitle = ""
-		page.show("public-waiting.html", w)
+		handlePastJamsPage(w, req)
 	} else {
 		vars := mux.Vars(req)
 		switch vars["function"] {
@@ -28,6 +40,40 @@ func handleMain(w http.ResponseWriter, req *http.Request) {
 			loadVotingPage(w, req)
 		case "vote":
 			handlePublicSaveVote(w, req)
+		}
+	}
+}
+
+func handlePastJamsPage(w http.ResponseWriter, req *http.Request) {
+	page := initPublicNoEventPage(w, req)
+	page.SubTitle = "Voting"
+	type archivePageData struct {
+		Jam    ArchivedGamejam
+		Winner Team
+	}
+	type pastPageData struct {
+		Archive []archivePageData
+	}
+	p := new(pastPageData)
+	for _, v := range m.archive.Jams {
+		a := new(archivePageData)
+		a.Jam = v
+		for _, t := range v.Teams {
+			if t.UUID == v.Rankings[0] {
+				a.Winner = t
+				break
+			}
+		}
+		p.Archive = append(p.Archive, *a)
+	}
+	page.TemplateData = p
+	for _, tmpl := range []string{
+		"htmlheader.html",
+		"public-pastjams.html",
+		"htmlfooter.html",
+	} {
+		if err := outputTemplate(tmpl, page, w); err != nil {
+			fmt.Printf("Error outputing Template %s\n%s\n", tmpl, err)
 		}
 	}
 }

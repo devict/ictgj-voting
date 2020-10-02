@@ -139,21 +139,24 @@ func NewArchivedGamejam(uuid string) (*ArchivedGamejam, error) {
 		gj.Teams = append(gj.Teams, *tm)
 	}
 
-  // And finally, the Rankings
-  var ranks []string
-  if ranks, err = bolt.GetKeyList([]string{"jam", "rankings"}); err != nil {
-    return nil, err
-  }
-  for _, v := range ranks {
-    var tmUUID string
-    tmUUID, err = bolt.GetValue([]string{"jam", "rankings"}, v)
-    if err != nil {
-      return nil, err
-    }
-    gj.Rankings = append(gj.Rankings, tmUUID)
-  }
+	// Now load the votes
+	gj.Votes = gj.LoadAllVotes(bolt)
 
-  // We could pull votes too... But I'm not right now.
+	// And finally, the Rankings
+	var ranks []string
+	if ranks, err = bolt.GetKeyList([]string{"jam", "rankings"}); err != nil {
+		return nil, err
+	}
+	for _, v := range ranks {
+		var tmUUID string
+		tmUUID, err = bolt.GetValue([]string{"jam", "rankings"}, v)
+		if err != nil {
+			return nil, err
+		}
+		gj.Rankings = append(gj.Rankings, tmUUID)
+	}
+
+	// We could pull votes too... But I'm not right now.
 	return gj, nil
 }
 
@@ -192,6 +195,66 @@ func (a *ArchivedGamejam) LoadTeam(openbolt *boltease.DB, uuid string) (*Team, e
 		tm.Game.Link = ""
 	}
 	return tm, nil
+}
+
+// LoadAllVotes loads all votes for the jam out of the database
+func (a *ArchivedGamejam) LoadAllVotes(openbolt *boltease.DB) []Vote {
+	var err error
+	var ret []Vote
+	votesPath := []string{"jam", "votes"}
+	var cliUUIDs []string
+	if cliUUIDs, err = openbolt.GetBucketList(votesPath); err != nil {
+		return ret
+	}
+	for _, cId := range cliUUIDs {
+		vtsPth := append(votesPath, cId)
+		var times []string
+		if times, err = openbolt.GetBucketList(vtsPth); err != nil {
+			// Error reading this bucket, move on to the next
+			continue
+		}
+		for _, t := range times {
+			fmt.Println("Loading Vote", cId, t)
+			if vt, err := a.LoadVote(openbolt, cId, t); err == nil {
+				ret = append(ret, *vt)
+			}
+		}
+	}
+	return ret
+}
+
+// Load a vote from the DB and return it
+func (a *ArchivedGamejam) LoadVote(openbolt *boltease.DB, clientId, t string) (*Vote, error) {
+	var tm time.Time
+	var err error
+	if tm, err = time.Parse(time.RFC3339, t); err != nil {
+		return nil, errors.New("Error loading vote: " + err.Error())
+	}
+	vt, err := NewVote(clientId, tm)
+	if err != nil {
+		return nil, errors.New("Error creating vote: " + err.Error())
+	}
+	var choices []string
+	if choices, err = openbolt.GetKeyList(vt.mPath); err != nil {
+		return nil, errors.New("Error creating vote: " + err.Error())
+	}
+	for _, v := range choices {
+		ch := new(GameChoice)
+		var rank int
+		if rank, err = strconv.Atoi(v); err == nil {
+			ch.Rank = rank
+			if ch.Team, err = openbolt.GetValue(vt.mPath, v); err == nil {
+				vt.Choices = append(vt.Choices, *ch)
+			}
+		}
+	}
+	if vt.VoterStatus, err = openbolt.GetValue(vt.mPath, "voterstatus"); err != nil {
+		vt.VoterStatus = ""
+	}
+	if vt.Discovery, err = openbolt.GetValue(vt.mPath, "discovery"); err != nil {
+		vt.Discovery = ""
+	}
+	return vt, nil
 }
 
 func (a *ArchivedGamejam) Save() error {
