@@ -9,8 +9,7 @@ require (
 	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pborman/uuid v1.2.0
-	golang.org/x/crypto v0.0.0-20180927165925-5295e8364332
-	golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611 // indirect
+	golang.org/x/crypto v0.1.0
 )
 
 go 1.13
