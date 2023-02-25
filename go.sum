@@ -22,5 +22,5 @@ github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 golang.org/x/crypto v0.0.0-20180927165925-5295e8364332 h1:hvQVdF6P9DX4OiKA5tpehlG6JsgzmyQiThG7q5Bn3UQ=
 golang.org/x/crypto v0.0.0-20180927165925-5295e8364332/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
-golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611 h1:O33LKL7WyJgjN9CvxfTIomjIClbd/Kq86/iipowHQU0=
-golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.1.0 h1:kunALQeHf1/185U1i0GOB/fy1IPRDDpuoOOqRReG57U=
+golang.org/x/sys v0.1.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
